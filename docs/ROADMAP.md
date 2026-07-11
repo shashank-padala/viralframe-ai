@@ -41,10 +41,14 @@ This is the actual product. Everything before this phase is scaffolding.
 - [ ] **Hook generation**: LLM call over the transcript to produce the 3
       hook variations (Bold/Curiosity/Controversial), replacing the string
       templates in `processing-client.tsx`.
-- [ ] **B-roll sourcing**: either a stock-footage API keyed by extracted
-      topic/keywords, or AI video generation. Needs a decision — stock is
-      faster/cheaper, generated video is more differentiated. This is the
-      single biggest open product question.
+- [ ] **B-roll sourcing**: AI video generation only — stock footage was
+      evaluated and rejected on quality grounds. `projects.broll_model`
+      (added in `0003_add_broll_model.sql`) stores the user's pick of
+      `kling` / `runway` / `luma` / `veo`, selectable on the dashboard
+      upload form, but no generation call is wired up yet — the field is
+      currently write-only. Next step: pick one model to integrate first
+      (recommend Kling, it's the default) via a hosted aggregator
+      (fal.ai/Replicate) rather than going direct to each vendor's API.
 - [ ] **Caption generation + styling**: word-level timestamps (from the STT
       step) burned in per the selected caption style.
 - [ ] **Composition/rendering**: the actual split-screen video render (top

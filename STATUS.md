@@ -64,10 +64,13 @@ Repo is now on GitHub (private): `shashank-padala/viralframe-ai`.
 
 ## Known gaps (not bugs, just unbuilt — see docs/ROADMAP.md Phase 2)
 
-- No real transcript extraction, hook-generation LLM call, b-roll sourcing,
-  caption burn-in, or video rendering pipeline. The results page's
-  Download/Regenerate/Share buttons intentionally show a "not wired up yet"
-  toast rather than faking success.
+- No real transcript extraction, hook-generation LLM call, b-roll
+  generation, caption burn-in, or video rendering pipeline. The results
+  page's Download/Regenerate/Share buttons intentionally show a "not wired
+  up yet" toast rather than faking success.
+- B-roll model choice (Kling/Runway/Luma/Veo) is selectable on the
+  dashboard and persisted to `projects.broll_model`, but nothing reads that
+  column yet — no generation API is actually called.
 - "3 free videos/month" is a display-only number, not enforced.
 - No billing (Stripe or otherwise) — pricing tiers are static marketing copy.
 - Not deployed anywhere yet — no Vercel project linked.
