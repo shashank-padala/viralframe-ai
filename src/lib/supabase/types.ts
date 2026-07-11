@@ -4,6 +4,7 @@
 export type Platform = "reel" | "tiktok" | "shorts";
 export type ProjectStatus = "uploaded" | "processing" | "ready" | "failed";
 export type Layout = "top" | "bottom" | "full";
+export type BrollModel = "kling" | "runway" | "luma" | "veo";
 
 export type Json =
   | string
@@ -48,6 +49,7 @@ export type Database = {
       };
       projects: {
         Row: {
+          broll_model: BrollModel;
           caption_style: string;
           cover_image_path: string | null;
           created_at: string;
@@ -64,6 +66,7 @@ export type Database = {
           user_id: string;
         };
         Insert: {
+          broll_model?: BrollModel;
           caption_style?: string;
           cover_image_path?: string | null;
           created_at?: string;
@@ -80,6 +83,7 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          broll_model?: BrollModel;
           caption_style?: string;
           cover_image_path?: string | null;
           created_at?: string;

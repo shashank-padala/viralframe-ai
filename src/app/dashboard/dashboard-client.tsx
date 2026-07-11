@@ -15,12 +15,19 @@ import {
 } from "@/components/ui/select";
 import { ReelMockup } from "@/components/site/reel-mockup";
 import { createClient } from "@/lib/supabase/client";
-import type { Platform } from "@/lib/supabase/types";
+import type { BrollModel, Platform } from "@/lib/supabase/types";
 
 const platforms: { id: Platform; label: string }[] = [
   { id: "reel", label: "Instagram Reel" },
   { id: "tiktok", label: "TikTok" },
   { id: "shorts", label: "YouTube Shorts" },
+];
+
+const brollModels: { id: BrollModel; label: string; description: string }[] = [
+  { id: "kling", label: "Kling 2.5", description: "Strong motion, good default" },
+  { id: "runway", label: "Runway Gen-4", description: "Most cinematic, priciest" },
+  { id: "luma", label: "Luma Ray2", description: "Fast, stylized" },
+  { id: "veo", label: "Google Veo 3", description: "Photorealistic, has audio" },
 ];
 
 const MAX_FILE_BYTES = 2 * 1024 * 1024 * 1024; // 2GB
@@ -45,6 +52,7 @@ export function DashboardClient({
 }) {
   const [platform, setPlatform] = useState<Platform>("reel");
   const [style, setStyle] = useState("business");
+  const [brollModel, setBrollModel] = useState<BrollModel>("kling");
   const [dragOver, setDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -81,6 +89,7 @@ export function DashboardClient({
       title: file.name.replace(/\.[^./]+$/, ""),
       platform,
       style,
+      broll_model: brollModel,
       status: "processing",
       source_video_path: path,
     });
@@ -213,6 +222,26 @@ export function DashboardClient({
                   <SelectItem value="news">News Commentary</SelectItem>
                   <SelectItem value="product">Product Marketing</SelectItem>
                   <SelectItem value="story">Storytelling</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="md:col-span-2">
+              <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                B-roll AI model
+              </div>
+              <Select
+                value={brollModel}
+                onValueChange={(v) => setBrollModel(v as BrollModel)}
+              >
+                <SelectTrigger className="mt-3 bg-background/40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {brollModels.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.label} — {m.description}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
