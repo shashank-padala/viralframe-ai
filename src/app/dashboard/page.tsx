@@ -1,0 +1,47 @@
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { Nav } from "@/components/site/nav";
+import { createClient } from "@/lib/supabase/server";
+import { DashboardClient } from "./dashboard-client";
+
+export const metadata: Metadata = {
+  title: "Dashboard — ViralFrame AI",
+};
+
+export default async function Dashboard() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login?redirectTo=/dashboard");
+  }
+
+  const { data: projects } = await supabase
+    .from("projects")
+    .select("id, title, current_hook, status, created_at")
+    .order("created_at", { ascending: false })
+    .limit(4);
+
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+  const { count: usedThisMonth } = await supabase
+    .from("projects")
+    .select("id", { count: "exact", head: true })
+    .gte("created_at", startOfMonth.toISOString());
+
+  const remaining = Math.max(0, 3 - (usedThisMonth ?? 0));
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Nav />
+      <DashboardClient
+        userId={user.id}
+        history={projects ?? []}
+        remainingFreeVideos={remaining}
+      />
+    </div>
+  );
+}
