@@ -21,12 +21,12 @@ Nothing here is architecturally new — it's closing the loop on what's
 already built but unverified. Check [`STATUS.md`](../STATUS.md) for the
 current checklist state.
 
-- [ ] Confirm `0001_init.sql` is applied to the live Supabase project.
+- [x] Confirm `0001_init.sql` is applied to the live Supabase project.
 - [ ] Enable Google OAuth provider in Supabase Auth settings + register
       redirect URLs (`localhost:3000/auth/callback` and prod once deployed).
 - [ ] Do one real end-to-end pass by hand: sign up → upload a real file →
       watch it land in Storage → watch the results page read it back.
-- [ ] Regenerate `src/lib/supabase/types.ts` from the live schema instead
+- [x] Regenerate `src/lib/supabase/types.ts` from the live schema instead
       of hand-maintaining it.
 - [ ] First deploy to Vercel (even just a preview) so the product is
       shareable and Storage/Auth redirect URLs can be finalized for prod.

@@ -1,85 +1,99 @@
+// Generated from the live Supabase schema via `mcp__supabase__generate_typescript_types`.
+// Regenerate after any migration change rather than hand-editing the `Database` type.
+
 export type Platform = "reel" | "tiktok" | "shorts";
 export type ProjectStatus = "uploaded" | "processing" | "ready" | "failed";
 export type Layout = "top" | "bottom" | "full";
 
-export interface Database {
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
+
+export type Database = {
+  __InternalSupabase: {
+    PostgrestVersion: "14.5";
+  };
   public: {
     Tables: {
       profiles: {
         Row: {
-          id: string;
+          avatar_url: string | null;
+          created_at: string;
           email: string;
           full_name: string | null;
-          avatar_url: string | null;
+          id: string;
           plan: string;
-          created_at: string;
         };
         Insert: {
-          id: string;
+          avatar_url?: string | null;
+          created_at?: string;
           email: string;
           full_name?: string | null;
-          avatar_url?: string | null;
+          id: string;
           plan?: string;
-          created_at?: string;
         };
         Update: {
-          id?: string;
+          avatar_url?: string | null;
+          created_at?: string;
           email?: string;
           full_name?: string | null;
-          avatar_url?: string | null;
+          id?: string;
           plan?: string;
-          created_at?: string;
         };
         Relationships: [];
       };
       projects: {
         Row: {
-          id: string;
-          user_id: string;
-          title: string;
-          platform: Platform;
-          style: string;
-          status: ProjectStatus;
-          layout: Layout;
           caption_style: string;
-          current_hook: string | null;
-          source_video_path: string;
           cover_image_path: string | null;
-          output_video_path: string | null;
           created_at: string;
+          current_hook: string | null;
+          id: string;
+          layout: Layout;
+          output_video_path: string | null;
+          platform: Platform;
+          source_video_path: string;
+          status: ProjectStatus;
+          style: string;
+          title: string;
           updated_at: string;
+          user_id: string;
         };
         Insert: {
-          id?: string;
-          user_id: string;
-          title?: string;
-          platform?: Platform;
-          style?: string;
-          status?: ProjectStatus;
-          layout?: Layout;
           caption_style?: string;
-          current_hook?: string | null;
-          source_video_path: string;
           cover_image_path?: string | null;
-          output_video_path?: string | null;
           created_at?: string;
+          current_hook?: string | null;
+          id?: string;
+          layout?: Layout;
+          output_video_path?: string | null;
+          platform?: Platform;
+          source_video_path: string;
+          status?: ProjectStatus;
+          style?: string;
+          title?: string;
           updated_at?: string;
+          user_id: string;
         };
         Update: {
-          id?: string;
-          user_id?: string;
-          title?: string;
-          platform?: Platform;
-          style?: string;
-          status?: ProjectStatus;
-          layout?: Layout;
           caption_style?: string;
-          current_hook?: string | null;
-          source_video_path?: string;
           cover_image_path?: string | null;
-          output_video_path?: string | null;
           created_at?: string;
+          current_hook?: string | null;
+          id?: string;
+          layout?: Layout;
+          output_video_path?: string | null;
+          platform?: Platform;
+          source_video_path?: string;
+          status?: ProjectStatus;
+          style?: string;
+          title?: string;
           updated_at?: string;
+          user_id?: string;
         };
         Relationships: [
           {
@@ -93,28 +107,28 @@ export interface Database {
       };
       reel_variations: {
         Row: {
-          id: string;
-          project_id: string;
-          label: string;
-          hook: string;
-          is_selected: boolean;
           created_at: string;
+          hook: string;
+          id: string;
+          is_selected: boolean;
+          label: string;
+          project_id: string;
         };
         Insert: {
-          id?: string;
-          project_id: string;
-          label: string;
-          hook: string;
-          is_selected?: boolean;
           created_at?: string;
+          hook: string;
+          id?: string;
+          is_selected?: boolean;
+          label: string;
+          project_id: string;
         };
         Update: {
-          id?: string;
-          project_id?: string;
-          label?: string;
-          hook?: string;
-          is_selected?: boolean;
           created_at?: string;
+          hook?: string;
+          id?: string;
+          is_selected?: boolean;
+          label?: string;
+          project_id?: string;
         };
         Relationships: [
           {
@@ -129,5 +143,7 @@ export interface Database {
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
-}
+};
