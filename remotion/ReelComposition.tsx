@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { AbsoluteFill, Sequence, Video, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, OffthreadVideo, Sequence, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 
 export interface BrollClipProps {
   sceneIndex: number;
@@ -51,7 +51,7 @@ function BrollTrack({
         const durationInFrames = Math.max(1, Math.round((clip.endSec - clip.startSec) * fps));
         return (
           <Sequence key={clip.sceneIndex} from={from} durationInFrames={durationInFrames}>
-            <Video
+            <OffthreadVideo
               src={clip.src}
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
             />
@@ -234,7 +234,7 @@ export function ReelComposition({
   captionStyle,
 }: ReelCompositionProps) {
   const creatorVideo = (
-    <Video src={creatorVideoSrc} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+    <OffthreadVideo src={creatorVideoSrc} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
   );
 
   if (layout === "full") {
