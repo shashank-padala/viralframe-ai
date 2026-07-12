@@ -9,9 +9,8 @@ import { getVideoDurationSeconds } from "./lib/ffprobe";
 import { transcribe } from "./steps/transcribe";
 import { generateHooksAndScenes } from "./steps/generateHooksAndScenes";
 import { generateAllBrollClips } from "./steps/generateBroll";
-import { renderReel } from "./steps/render";
+import { renderReel, type RenderInputProps } from "./steps/render";
 import { generateCoverImage } from "./steps/generateCover";
-import type { ReelCompositionProps } from "../../remotion/ReelComposition";
 
 async function runFullPipeline(ctx: PipelineContext, workDir: string) {
   // 1. Transcribe
@@ -55,8 +54,7 @@ async function runFullPipeline(ctx: PipelineContext, workDir: string) {
   // 4. Render
   await ctx.setStage("rendering");
   const durationInSeconds = await getVideoDurationSeconds(localCreatorVideoPath);
-  const compositionProps: ReelCompositionProps = {
-    creatorVideoSrc: sourceVideoUrl,
+  const compositionProps: RenderInputProps = {
     brollClips: brollClipsWithUrls,
     words: transcript.words,
     hook: hooks[0]?.hook ?? "",
@@ -64,7 +62,7 @@ async function runFullPipeline(ctx: PipelineContext, workDir: string) {
     captionStyle: ctx.project.caption_style,
     durationInSeconds,
   };
-  const renderedVideo = await renderReel(compositionProps);
+  const renderedVideo = await renderReel(compositionProps, localCreatorVideoPath);
   const outputPath = `${ctx.project.user_id}/${ctx.projectId}/output.mp4`;
   await ctx.uploadToExports(outputPath, renderedVideo, "video/mp4");
   await ctx.setOutputVideoPath(outputPath);

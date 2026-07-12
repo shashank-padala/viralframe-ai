@@ -7,10 +7,14 @@
 //    due to the now-fixed 405 bug)
 // No new Kling generations, no new spend. Just to see the cutaway style.
 
+import path from "node:path";
+import os from "node:os";
+import fs from "node:fs/promises";
+
 import { createAdminClient } from "./lib/supabaseAdmin";
 import { PipelineContext } from "./lib/context";
-import { renderReel } from "./steps/render";
-import type { ReelCompositionProps } from "../../remotion/ReelComposition";
+import { downloadToFile } from "./lib/download";
+import { renderReel, type RenderInputProps } from "./steps/render";
 
 const PROJECT_ID = "9225abd2-1c66-461b-b1aa-cefea50d2d34";
 const FAL_KLING_BASE = "https://queue.fal.run/fal-ai/kling-video/requests";
@@ -56,45 +60,52 @@ async function main() {
   } | null;
   if (!transcript) throw new Error("Project has no transcript saved");
 
-  console.log("Fetching already-completed clip URLs (no new generation)...");
-  const brollClips = await Promise.all(
-    CLIPS.map(async (clip, i) => {
-      console.log(`  - ${clip.label} (${clip.requestId})`);
-      const src = await fetchCompletedClipUrl(clip.requestId);
-      return {
-        sceneIndex: i,
-        startSec: clip.startSec,
-        endSec: clip.startSec + CLIP_WINDOW_SECONDS,
-        src,
-      };
-    })
-  );
+  const workDir = await fs.mkdtemp(path.join(os.tmpdir(), "cutaway-test-"));
 
-  console.log("Getting creator source video URL...");
-  const creatorVideoSrc = await ctx.getSourceVideoSignedUrl();
+  try {
+    console.log("Fetching already-completed clip URLs (no new generation)...");
+    const brollClips = await Promise.all(
+      CLIPS.map(async (clip, i) => {
+        console.log(`  - ${clip.label} (${clip.requestId})`);
+        const src = await fetchCompletedClipUrl(clip.requestId);
+        return {
+          sceneIndex: i,
+          startSec: clip.startSec,
+          endSec: clip.startSec + CLIP_WINDOW_SECONDS,
+          src,
+        };
+      })
+    );
 
-  const compositionProps: ReelCompositionProps = {
-    creatorVideoSrc,
-    brollClips,
-    words: transcript.words,
-    hook: ctx.project.current_hook ?? "",
-    layout: "cutaway",
-    captionStyle: ctx.project.caption_style,
-    durationInSeconds: 48.5,
-  };
+    console.log("Downloading creator source video locally (for fast local render access)...");
+    const sourceVideoUrl = await ctx.getSourceVideoSignedUrl();
+    const localCreatorVideoPath = path.join(workDir, "creator.mp4");
+    await downloadToFile(sourceVideoUrl, localCreatorVideoPath);
 
-  console.log("Rendering...");
-  const renderedVideo = await renderReel(compositionProps);
+    const compositionProps: RenderInputProps = {
+      brollClips,
+      words: transcript.words,
+      hook: ctx.project.current_hook ?? "",
+      layout: "cutaway",
+      captionStyle: ctx.project.caption_style,
+      durationInSeconds: 48.5,
+    };
 
-  const outputPath = `${ctx.project.user_id}/${ctx.projectId}/test-cutaway.mp4`;
-  await ctx.uploadToExports(outputPath, renderedVideo, "video/mp4");
+    console.log("Rendering...");
+    const renderedVideo = await renderReel(compositionProps, localCreatorVideoPath);
 
-  const { data: signed } = await client.storage
-    .from("reel-exports")
-    .createSignedUrl(outputPath, 3600);
+    const outputPath = `${ctx.project.user_id}/${ctx.projectId}/test-cutaway.mp4`;
+    await ctx.uploadToExports(outputPath, renderedVideo, "video/mp4");
 
-  console.log("\nDone. Download URL (valid 1 hour):");
-  console.log(signed?.signedUrl);
+    const { data: signed } = await client.storage
+      .from("reel-exports")
+      .createSignedUrl(outputPath, 3600);
+
+    console.log("\nDone. Download URL (valid 1 hour):");
+    console.log(signed?.signedUrl);
+  } finally {
+    await fs.rm(workDir, { recursive: true, force: true });
+  }
 }
 
 main().catch((error) => {
