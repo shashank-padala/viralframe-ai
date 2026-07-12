@@ -43,7 +43,7 @@ runtime-verified** — see `STATUS.md` for exactly what's blocking that.
 
 - [x] **Transcript/script extraction**: Deepgram (Nova-3), word-level
       timestamps, stored in `projects.transcript`.
-- [x] **Hook generation**: `gpt-5.6-luna` structured-output call over the
+- [x] **Hook generation**: `gpt-5.4-nano` structured-output call over the
       transcript, producing the 3 hook variations (Bold/Curiosity/
       Controversial) in the same call as the b-roll scene prompts below —
       replaces the old string templates in `processing-client.tsx`.
