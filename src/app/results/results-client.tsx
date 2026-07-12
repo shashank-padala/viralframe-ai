@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Download,
   RefreshCw,
@@ -18,6 +19,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { ReelMockup } from "@/components/site/reel-mockup";
 import { createClient } from "@/lib/supabase/client";
+import { retryPipelineAction } from "@/lib/pipeline/actions";
 import type { Database, Layout } from "@/lib/supabase/types";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
@@ -32,7 +34,7 @@ const layouts: { id: Layout; label: string }[] = [
 const captions = ["Hormozi style", "Minimal", "News style", "Podcast"];
 
 function notImplemented() {
-  toast.info("Rendering pipeline isn't wired up yet — this is a preview only.");
+  toast.info("Not wired up yet.");
 }
 
 export function ResultsClient({
@@ -48,8 +50,47 @@ export function ResultsClient({
   const [selectedVariationId, setSelectedVariationId] = useState(
     variations.find((v) => v.is_selected)?.id ?? null
   );
+  const [downloading, setDownloading] = useState<"video" | "cover" | null>(null);
+  const [regenerating, setRegenerating] = useState(false);
+  const router = useRouter();
 
   const supabase = createClient();
+
+  async function downloadExport(path: string | null, kind: "video" | "cover", filename: string) {
+    if (!path) {
+      toast.error(`No ${kind} has been generated yet.`);
+      return;
+    }
+    setDownloading(kind);
+    const { data, error } = await supabase.storage
+      .from("reel-exports")
+      .createSignedUrl(path, 60);
+    setDownloading(null);
+    if (error || !data) {
+      toast.error(`Couldn't create a download link: ${error?.message}`);
+      return;
+    }
+    const link = document.createElement("a");
+    link.href = data.signedUrl;
+    link.download = filename;
+    link.click();
+  }
+
+  async function copyShareLink() {
+    await navigator.clipboard.writeText(window.location.href);
+    toast.success("Link copied to clipboard.");
+  }
+
+  async function regenerate() {
+    setRegenerating(true);
+    try {
+      await retryPipelineAction(project.id);
+      router.push(`/processing?projectId=${project.id}`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't start regeneration.");
+      setRegenerating(false);
+    }
+  }
 
   async function saveHook(nextHook: string) {
     const { error } = await supabase
@@ -108,11 +149,18 @@ export function ResultsClient({
           </h1>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="border-border/60 bg-surface/40" onClick={notImplemented}>
+          <Button variant="outline" className="border-border/60 bg-surface/40" onClick={copyShareLink}>
             <Share2 className="mr-2 h-4 w-4" /> Share
           </Button>
-          <Button className="bg-gradient-brand text-primary-foreground shadow-glow hover:opacity-95" onClick={notImplemented}>
-            <Download className="mr-2 h-4 w-4" /> Download HD
+          <Button
+            className="bg-gradient-brand text-primary-foreground shadow-glow hover:opacity-95"
+            disabled={downloading === "video"}
+            onClick={() =>
+              downloadExport(project.output_video_path, "video", `${project.title}.mp4`)
+            }
+          >
+            <Download className="mr-2 h-4 w-4" />
+            {downloading === "video" ? "Preparing…" : "Download HD"}
           </Button>
         </div>
       </div>
@@ -161,14 +209,27 @@ export function ResultsClient({
                 />
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" className="border-border/60 bg-background/40" onClick={notImplemented}>
-                  <RefreshCw className="mr-2 h-4 w-4" /> Regenerate
+                <Button
+                  variant="outline"
+                  className="border-border/60 bg-background/40"
+                  disabled={regenerating}
+                  onClick={regenerate}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  {regenerating ? "Regenerating…" : "Regenerate"}
                 </Button>
                 <Button variant="outline" className="border-border/60 bg-background/40" onClick={notImplemented}>
                   <Pencil className="mr-2 h-4 w-4" /> Edit
                 </Button>
-                <Button className="bg-gradient-brand text-primary-foreground shadow-glow hover:opacity-95" onClick={notImplemented}>
-                  <Download className="mr-2 h-4 w-4" /> Download
+                <Button
+                  className="bg-gradient-brand text-primary-foreground shadow-glow hover:opacity-95"
+                  disabled={downloading === "video"}
+                  onClick={() =>
+                    downloadExport(project.output_video_path, "video", `${project.title}.mp4`)
+                  }
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  {downloading === "video" ? "Preparing…" : "Download"}
                 </Button>
               </div>
             </TabsContent>
@@ -195,11 +256,24 @@ export function ResultsClient({
                     matches the topic.
                   </p>
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <Button variant="outline" className="border-border/60 bg-background/40" onClick={notImplemented}>
-                      <RefreshCw className="mr-2 h-4 w-4" /> Regenerate cover
+                    <Button
+                      variant="outline"
+                      className="border-border/60 bg-background/40"
+                      disabled={regenerating}
+                      onClick={regenerate}
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      {regenerating ? "Regenerating…" : "Regenerate cover"}
                     </Button>
-                    <Button className="bg-gradient-brand text-primary-foreground shadow-glow hover:opacity-95" onClick={notImplemented}>
-                      <Download className="mr-2 h-4 w-4" /> Download
+                    <Button
+                      className="bg-gradient-brand text-primary-foreground shadow-glow hover:opacity-95"
+                      disabled={downloading === "cover"}
+                      onClick={() =>
+                        downloadExport(project.cover_image_path, "cover", `${project.title}-cover.png`)
+                      }
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      {downloading === "cover" ? "Preparing…" : "Download"}
                     </Button>
                   </div>
                 </div>

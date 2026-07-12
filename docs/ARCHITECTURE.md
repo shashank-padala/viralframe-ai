@@ -16,8 +16,9 @@ source of truth for *design intent*; this repo is the source of truth for
 |---|---|---|
 | Framework | Next.js 16.2.10, App Router, Turbopack | See the Next.js 16 gotchas below — this version renamed `middleware` to `proxy`. |
 | UI | shadcn/ui (CLI v4, `radix-nova` base, unified `radix-ui` package) + Tailwind v4 | Not the "new-york" style CLI you may remember; the CLI reworked style/preset options. Run `npx shadcn@latest docs <component>` before hand-editing a primitive. |
-| Backend | Supabase (Postgres, Auth, Storage) | No custom API server — pages talk to Supabase directly via `@supabase/ssr`. |
-| Deploy target | Vercel (not yet linked) | — |
+| Backend | Supabase (Postgres, Auth, Storage, Realtime) | No custom API server for CRUD — pages talk to Supabase directly via `@supabase/ssr`. Realtime is used for live pipeline progress (`projects` table, added to the `supabase_realtime` publication in `0005_enable_realtime.sql`). |
+| AI pipeline orchestration | GitHub Actions (`.github/workflows/process-video.yml`) | Not Vercel — a GitHub-hosted runner is a full Linux VM with generous compute/time (vs. a serverless Function's ceilings), which the multi-minute render pipeline needs. Triggered via `workflow_dispatch` from a Next.js Server Action (`src/lib/pipeline/actions.ts`). |
+| Deploy target | Vercel | The Next.js app itself. The pipeline scripts run on GitHub Actions, not Vercel — see above. |
 
 ## Directory map
 
@@ -27,9 +28,9 @@ src/app/                    routes (App Router)
   pricing/page.tsx           pricing (marketing)
   login/                    login page + login-form.tsx (client) — Google OAuth + email magic link
   auth/callback/route.ts    exchanges the OAuth/OTP code for a session, redirects to `next`
-  dashboard/                upload UI (dashboard-client.tsx) + history list
-  processing/                simulated AI pipeline animation (processing-client.tsx)
-  results/                  edit/export screen (results-client.tsx)
+  dashboard/                upload UI (dashboard-client.tsx) + history list + free-tier pre-check
+  processing/                real pipeline progress via Supabase Realtime (processing-client.tsx)
+  results/                  edit/export screen (results-client.tsx) — Download/Regenerate/Share are real
   globals.css               ported design tokens (brand colors, gradients, fonts)
 src/components/site/         Nav (auth-aware, Server Component), Footer, ReelMockup (pure presentational)
 src/components/ui/           shadcn primitives (button, select, tabs, input, label, sonner)
@@ -37,14 +38,26 @@ src/lib/supabase/
   client.ts                 browser client (createBrowserClient)
   server.ts                 server client for Server Components/Actions (cookies-based)
   actions.ts                Server Actions (currently just signOutAction)
-  types.ts                  hand-written Database type — see "Type drift risk" below
+  types.ts                  Database type, regenerated from the live schema via Supabase MCP
+src/lib/pipeline/actions.ts  Server Actions that dispatch/retry the GitHub Actions workflow
 src/proxy.ts                 session refresh + route protection (Next 16's replacement for middleware.ts)
-supabase/migrations/0001_init.sql   schema, RLS, storage buckets — full SQL source of truth
+scripts/pipeline/            the actual AI pipeline — runs in GitHub Actions, not the Next.js app
+  run.ts                    orchestrator: transcribe -> hooks/scenes -> b-roll -> render -> cover
+  steps/                    one file per external call (Deepgram, gpt-5.4-mini, fal.ai/Kling,
+                             Remotion render, gpt-image-1 cover)
+  lib/                      Supabase admin client, PipelineContext (stage/error/storage helpers),
+                             retry/backoff, local-file staging, ffprobe
+remotion/                    the video composition Remotion renders server-side
+  ReelComposition.tsx        split-layout + caption burn-in + hook overlay
+  Root.tsx, index.ts         composition registration, calculateMetadata for variable duration
+.github/workflows/
+  process-video.yml         workflow_dispatch(project_id) -> installs ffmpeg -> runs scripts/pipeline/run.ts
+supabase/migrations/         schema, RLS, storage buckets, Realtime, free-tier trigger — full SQL source of truth
 ```
 
 ## Data model
 
-Three tables, all RLS-scoped to `auth.uid()`:
+Four tables, all RLS-scoped to `auth.uid()`:
 
 - **`profiles`** — 1:1 with `auth.users`, auto-created by a trigger
   (`handle_new_user`) on signup.
@@ -52,44 +65,64 @@ Three tables, all RLS-scoped to `auth.uid()`:
   directly (`layout`, `caption_style`, `current_hook`) rather than
   versioning edits — the results page is a live editor, not a history.
   `status` moves `uploaded → processing → ready` (or `failed`).
+  `pipeline_stage` (`transcribing → writing_hooks → generating_broll →
+  rendering → generating_cover → ready`, or `failed`) is the real-time
+  progress signal the processing screen subscribes to; `error_message` is
+  set alongside `failed`; `transcript` holds the Deepgram response
+  (word-level timestamps) once the first stage completes. A
+  `SECURITY DEFINER` trigger (`enforce_free_tier_upload_limit`) blocks a 4th
+  insert in a calendar month for `plan = 'free'` users.
 - **`reel_variations`** — the 3 AI-suggested hook options per project
-  (label + hook text + `is_selected`). Selecting one copies its hook into
-  `projects.current_hook`.
+  (label + hook text + `is_selected`), now written by a real `gpt-5.4-mini`
+  structured-output call instead of string templates. Selecting one copies
+  its hook into `projects.current_hook`.
+- **`broll_clips`** — one row per AI-generated b-roll scene (`scene_index`,
+  `prompt`, `model`, `status`, `storage_path`), generated in parallel per
+  project. Not surfaced in the UI yet — internal to the render step.
 
 Storage: two private buckets, `source-videos` and `reel-exports`, both keyed
 by path `${auth.uid()}/${project_id}/${filename}` — the first path segment
-doubles as the RLS ownership check (`storage.foldername(name)[1]`).
+doubles as the RLS ownership check (`storage.foldername(name)[1]`). B-roll
+clips, the final rendered video, and cover images all land in `reel-exports`.
 
-Full schema: [`supabase/migrations/0001_init.sql`](../supabase/migrations/0001_init.sql).
+Realtime: `projects` is in the `supabase_realtime` publication (added in
+`0005_enable_realtime.sql` — this is not on by default for new tables) so
+the processing screen can subscribe to `pipeline_stage` changes directly.
+
+Full schema: `supabase/migrations/0001_init.sql` through `0006_*.sql`.
 
 ## Request flow: upload → results
 
 ```
-Dashboard (client)                Processing (client)              Results (client)
-  file picked/dropped                on mount: 6-step
-  → validate type/size                scripted animation
-  → storage.upload(                   (900ms/step, no real AI)
-      source-videos/uid/pid/file)     on completion:
-  → insert projects row                → insert 3 reel_variations
-      (status=processing)                (templated Bold/Curiosity/
-  → router.push(                          Controversial hooks)
-      /processing?projectId=pid)       → update projects
-                                           (status=ready, current_hook)
-                                        → router.push(/results?projectId=pid)
-                                                                        reads project + variations
-                                                                        edits (hook/layout/caption/
-                                                                        variation select) write
-                                                                        straight to Supabase on
-                                                                        change/blur
+Dashboard (client)              GitHub Actions               Processing (client)         Results (client)
+  file picked/dropped             (scripts/pipeline/run.ts)     Realtime subscription
+  → free-tier pre-check           1. transcribe (Deepgram)       on projects row
+  → storage.upload(                  -> projects.transcript      (pipeline_stage,
+      source-videos/uid/pid/file)  2. gpt-5.4-mini: hooks +       error_message)
+  → insert projects row               b-roll scene prompts        maps to the step list;
+      (status=processing,           -> reel_variations             on status=ready,
+       triggers free-tier check)  3. per-scene b-roll via          router.push(/results)
+  → dispatchPipelineAction()          fal.ai/Kling (parallel)      on failure: shows
+      (Server Action -> GitHub       -> broll_clips + Storage       error_message + Retry
+       Actions workflow_dispatch)  4. Remotion render                (re-dispatches the
+  → router.push(/processing)          (captions, hook overlay,       same workflow)
+                                       split layout)
+                                       -> projects.output_video_path
+                                     5. gpt-image-1 cover                                  reads project + variations
+                                       (ffmpeg frame + AI bg)                               edits write straight to
+                                       -> projects.cover_image_path                         Supabase on change/blur
+                                     -> pipeline_stage = ready                              Download/Regenerate/Share
+                                        (or failed + error_message)                         are real (signed Storage
+                                                                                             URLs, workflow re-dispatch,
+                                                                                             clipboard copy)
 ```
 
-**What's real**: auth, the Storage upload, and every DB read/write in that
-diagram. **What's simulated**: the "AI" itself — there is no transcript
-extraction, no b-roll selection/generation, no caption burn-in, no video
-rendering. The hook variations are string templates built from the
-project title, not model output. The Download/Regenerate/Share buttons on
-the results page are wired to a `notImplemented()` toast, not dead-clicks,
-so the UI doesn't lie about what's real.
+**What's real**: everything in that diagram. The processing UI's fake
+`setTimeout` animation and the string-templated hooks are gone. The only
+UI element still faking nothing-yet-real is the results page's "Edit"
+button next to Regenerate (ambiguous/redundant with the hook `Input` right
+above it) — it still shows a plain "Not wired up yet." toast rather than
+guessing what it should do.
 
 ## Auth
 
@@ -133,19 +166,26 @@ All three client constructors (`client.ts`, `server.ts`, `proxy.ts`) and
 `.env.local.example` use the new name — keep it consistent if you add more
 Supabase call sites.
 
+`scripts/pipeline/lib/supabaseAdmin.ts` is different: it uses
+`SUPABASE_SERVICE_ROLE_KEY` (bypasses RLS entirely) because the pipeline
+runs unattended in GitHub Actions with no user session. Never import that
+module from app code that runs in the browser or in a user-facing server
+context — it's for the pipeline runner only.
+
 ## Type drift risk
 
-`src/lib/supabase/types.ts` is **hand-written** to match
-`supabase/migrations/0001_init.sql`, not generated. If the migration
-changes, this file will silently drift. Once the Supabase MCP or CLI is
-available in-session, regenerate it properly:
+`src/lib/supabase/types.ts` is generated from the live schema via
+`mcp__supabase__generate_typescript_types`, not hand-maintained — regenerate
+it after every migration:
 
 ```
-supabase gen types typescript --project-id oqqfejxdewevfxnjblsi > src/lib/supabase/types.ts
+mcp__supabase__generate_typescript_types
 ```
 
-(then reintroduce the hand-written `Platform`/`ProjectStatus`/`Layout`
-convenience unions if the generator doesn't emit them).
+Then reintroduce the hand-written convenience unions the generator doesn't
+emit — `Platform`, `ProjectStatus`, `Layout`, `BrollModel`, `PipelineStage`,
+`BrollClipStatus` — layered on top of the generated `Database` type so app
+code gets literal types instead of plain `string` for those columns.
 
 ## MCP
 

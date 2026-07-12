@@ -18,6 +18,12 @@ export default async function Dashboard() {
     redirect("/login?redirectTo=/dashboard");
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan")
+    .eq("id", user.id)
+    .single();
+
   const { data: projects } = await supabase
     .from("projects")
     .select("id, title, current_hook, status, created_at")
@@ -41,6 +47,7 @@ export default async function Dashboard() {
         userId={user.id}
         history={projects ?? []}
         remainingFreeVideos={remaining}
+        plan={profile?.plan ?? "free"}
       />
     </div>
   );

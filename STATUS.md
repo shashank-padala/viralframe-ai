@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 2026-07-11_
+_Last updated: 2026-07-12_
 
 Read this first in a new session. For the "why", see `docs/PRODUCT.md`,
 `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`.
@@ -8,79 +8,114 @@ Read this first in a new session. For the "why", see `docs/PRODUCT.md`,
 ## Where things stand
 
 The app is a working Next.js port of the `~/reel-magic-ai-40` mock, wired to
-a real Supabase project (`oqqfejxdewevfxnjblsi`). The schema is now applied
-to that project. Auth, upload, and all results-page edits are real. The AI
-processing step is simulated (scripted animation + templated hook text, no
-real transcript/b-roll/rendering). See `docs/ARCHITECTURE.md` → "What's real
-vs simulated" for the exact line.
+a real Supabase project (`oqqfejxdewevfxnjblsi`), with a **real AI pipeline
+now built** (Phase 2 from `docs/ROADMAP.md`) — code-complete but not yet
+runtime-verified end to end because it needs third-party API keys nobody has
+supplied yet (see "NOT yet verified" below). Nothing here fakes success:
+every stage either does the real thing or fails loudly with `error_message`
+set on the project row.
+
+Auth, upload, and all results-page edits are real, same as before. What
+changed: transcript extraction, hook generation, b-roll generation,
+composition/rendering, and cover image generation are all real code paths
+now, orchestrated by a GitHub Actions workflow instead of the old
+`setTimeout` animation. See `docs/ARCHITECTURE.md` for the full pipeline
+diagram.
 
 Build (`npm run build`) and lint (`npm run lint`) are clean as of this
-writing. Dev server has been smoke-tested with the real project's
-credentials — no Supabase client errors, route protection redirects work.
+writing. `npx tsc --noEmit` is clean including `scripts/pipeline/` and
+`remotion/`. The Remotion composition bundles and resolves correctly
+(verified locally — see "Verified this session"); nothing has been rendered
+against a real video yet.
 
-Repo is now on GitHub (private): `shashank-padala/viralframe-ai`.
+Repo is on GitHub (private): `shashank-padala/viralframe-ai`.
 
 ## Verified this session
 
-- [x] `npm run build` and `npm run lint` pass clean.
-- [x] All 6 routes return the expected status (200 for public, 307→/login
-      for protected) against the real Supabase project.
-- [x] Compiled CSS contains the ported brand tokens (fonts, gradients).
-- [x] `.env.local` exists locally with real credentials (gitignored, not
-      committed — see `.env.local.example` for the shape), and matches the
-      live project's URL/publishable key exactly (checked via Supabase MCP).
-- [x] **Migration applied.** `supabase/migrations/0001_init.sql` is live on
-      the project — `profiles`, `projects`, `reel_variations` all exist with
-      RLS enabled, plus the `source-videos`/`reel-exports` storage buckets.
-      Confirmed via `mcp__supabase__list_tables`.
-- [x] Fixed a security advisory from the migration: `handle_new_user()` was
-      publicly callable via REST RPC as a `SECURITY DEFINER` function.
-      Revoked `EXECUTE` from `public`/`anon`/`authenticated` in a follow-up
-      migration (`0002_lock_down_handle_new_user`) — it still fires via the
-      `on_auth_user_created` trigger, just isn't directly callable anymore.
-- [x] `src/lib/supabase/types.ts` regenerated from the live schema via
-      `mcp__supabase__generate_typescript_types` (kept the hand-written
-      `Platform`/`ProjectStatus`/`Layout` literal unions layered on top,
-      since app code imports them and the generated output only has
-      `string`).
+- [x] `npm run build`, `npm run lint`, `npx tsc --noEmit` all pass clean
+      across the whole repo, including `scripts/pipeline/` and `remotion/`.
+- [x] Migrations `0004_pipeline_state`, `0005_enable_realtime`,
+      `0006_free_tier_limit` all applied to the live Supabase project (on
+      top of `0001`–`0003` from earlier). No new security advisories beyond
+      the pre-existing platform-internal `rls_auto_enable` warning.
+- [x] `broll_clips` table + `projects.pipeline_stage`/`error_message`/
+      `transcript` columns exist live, confirmed via `mcp__supabase__list_tables`.
+- [x] `projects` is now in the `supabase_realtime` publication (was empty
+      before — `postgres_changes` subscriptions would have silently done
+      nothing without this).
+- [x] Free-tier limit is enforced by a Postgres trigger
+      (`enforce_free_tier_upload_limit`, `SECURITY DEFINER`, locked down
+      like `handle_new_user`) — not just a client-side check, so it can't be
+      bypassed by calling the Supabase client directly.
+- [x] `scripts/pipeline/run.ts` resolves all imports correctly under `tsx`
+      (including the `@/` path alias) and fails exactly where expected when
+      given a fake project ID / fake service-role key — confirms the
+      Supabase admin client wiring is correct.
+- [x] The Remotion composition (`remotion/`) bundles cleanly and
+      `selectComposition` resolves duration/dimensions correctly from
+      `calculateMetadata` (1080×1920 @ 30fps, verified with sample props).
+- [x] fal.ai's queue API shape (submit/status/result endpoints) and
+      OpenAI's Structured Outputs / Images edit endpoint shapes were verified
+      against current docs before writing the integration code, not assumed
+      from training data.
 
-## NOT yet verified — do these first next session
+## NOT yet verified — blocked on prerequisites, do these first next session
 
-1. **Is Google OAuth enabled?** The login page calls
-   `supabase.auth.signInWithOAuth({ provider: "google" })`, but the Google
-   provider has to be turned on in Supabase Auth settings with a redirect
-   URL registered (`http://localhost:3000/auth/callback` for local dev).
-   Email magic link is on by default and needs no extra setup. No MCP tool
-   here can toggle this (it's Dashboard/Management-API only) — must be done
-   by hand at supabase.com/dashboard → Authentication → Providers.
-2. **Full manual click-through with a real file**: sign up → land on
-   dashboard → drop a real video file → confirm it appears in the
-   `source-videos` bucket → confirm a `projects` row was created → let the
-   fake processing step finish → confirm `reel_variations` rows exist and
-   the results page reads them → edit the hook/layout/caption and confirm it
-   persists on reload. Tables/buckets now exist so this should work, but it
-   hasn't been driven end-to-end with a real file yet — only route-level
-   smoke tests (curl status codes) have been done.
+1. **No third-party API keys are configured yet.** `scripts/pipeline/` is
+   code-complete but every external call (Deepgram, OpenAI, fal.ai) will
+   fail loudly until these are set — see `.env.local.example` for the full
+   list (`DEEPGRAM_API_KEY`, `OPENAI_API_KEY`, `FAL_KEY`,
+   `SUPABASE_SERVICE_ROLE_KEY`). None of these should ever get the
+   `NEXT_PUBLIC_` prefix.
+2. **GitHub Actions isn't wired up yet.** `.github/workflows/process-video.yml`
+   exists but (a) the repo secrets it reads
+   (`SUPABASE_SERVICE_ROLE_KEY`/`DEEPGRAM_API_KEY`/`OPENAI_API_KEY`/`FAL_KEY`,
+   plus `NEXT_PUBLIC_SUPABASE_URL`) haven't been set on the GitHub repo, and
+   (b) it's never been triggered — `gh workflow run process-video.yml -f
+   project_id=<id>` is the fastest way to test it once secrets are in.
+3. **The app can't dispatch the workflow yet either.** `dispatchPipelineAction`
+   (`src/lib/pipeline/actions.ts`) needs `GITHUB_ACTIONS_TOKEN` (a
+   fine-grained PAT scoped to this repo, `actions: write`),
+   `GITHUB_REPO_OWNER`, `GITHUB_REPO_NAME` set as env vars **on Vercel**
+   (production + preview) — not just locally.
+4. **Is Google OAuth enabled?** Still open from before — Dashboard/
+   Management-API only, no MCP tool covers this. See supabase.com/dashboard
+   → Authentication → Providers.
+5. **Full manual click-through with a real file, end to end**: upload → real
+   transcript lands in `projects.transcript` → real (non-templated) hooks in
+   `reel_variations` → real b-roll clips in `broll_clips` → a real playable
+   MP4 at `output_video_path` → a real cover image → Download/Regenerate on
+   the results page actually work. Nothing in this chain has touched a real
+   video file yet.
 
-## Known gaps (not bugs, just unbuilt — see docs/ROADMAP.md Phase 2)
+## Known gaps (not bugs, just unbuilt — see docs/ROADMAP.md Phase 3)
 
-- No real transcript extraction, hook-generation LLM call, b-roll
-  generation, caption burn-in, or video rendering pipeline. The results
-  page's Download/Regenerate/Share buttons intentionally show a "not wired
-  up yet" toast rather than faking success.
-- B-roll model choice (Kling/Runway/Luma/Veo) is selectable on the
-  dashboard and persisted to `projects.broll_model`, but nothing reads that
-  column yet — no generation API is actually called.
-- "3 free videos/month" is a display-only number, not enforced.
-- No billing (Stripe or otherwise) — pricing tiers are static marketing copy.
+- Runway/Luma/Veo b-roll models are selectable in the UI but throw a clear
+  "not implemented yet" error if picked — only Kling (the default) is wired
+  up to fal.ai.
+- The results page "Edit" button (next to Regenerate/Download on the Video
+  tab) is still a no-op toast — redundant with the hook `Input` right above
+  it, left alone rather than guessing what it should do.
+- "Regenerate" (video or cover) re-runs the *entire* pipeline, not just the
+  affected stage — acceptable for v1 per the plan, real cost/latency
+  overhead if someone just wants a new cover.
+- No billing (Stripe or otherwise) — pricing tiers are static marketing
+  copy. The free-tier *count* is now enforced (3/month), but there's no way
+  to actually become a paying user yet.
 - Not deployed anywhere yet — no Vercel project linked.
 
 ## Immediate next steps, in order
 
-1. Enable Google OAuth in Supabase Auth settings (manual, dashboard-only).
-2. Do the full manual click-through in item 2 above with a real video file.
-3. Once confirmed working, do the first Vercel deploy (`/vercel:deploy` or
-   the Vercel MCP) so there's a shareable preview link.
-4. Then start Phase 2 (real AI pipeline) per `docs/ROADMAP.md` — starting
-   with picking the transcript/STT provider, since everything else in that
-   phase depends on having a transcript.
+1. Get the four API keys (Deepgram, OpenAI, fal.ai) + create the GitHub
+   fine-grained PAT, set them as GitHub repo secrets.
+2. `gh workflow run process-video.yml -f project_id=<a real project id>` —
+   watch it run against one real uploaded video, fix whatever breaks first
+   (most likely candidate: Remotion's Chromium deps on the GitHub-hosted
+   runner, or fal.ai's exact response shape drifting from what was verified
+   against docs).
+3. Once the workflow runs clean standalone, set `GITHUB_ACTIONS_TOKEN` /
+   `GITHUB_REPO_OWNER` / `GITHUB_REPO_NAME` on Vercel and do the first
+   deploy, then do the full click-through from the browser.
+4. Enable Google OAuth in Supabase Auth settings (unrelated, still open).
+5. Then Phase 3 (`docs/ROADMAP.md`) — Stripe billing, Runway/Luma/Veo,
+   scoped regeneration instead of whole-pipeline reruns.

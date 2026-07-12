@@ -1,82 +1,124 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { AlertTriangle, Check, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
+import { retryPipelineAction } from "@/lib/pipeline/actions";
+import type { PipelineStage } from "@/lib/supabase/types";
 
-const steps = [
-  "Understanding your content",
-  "Finding viral moments",
-  "Generating hook",
-  "Selecting B-roll",
-  "Designing layout",
-  "Creating cover image",
+const STAGE_ORDER: PipelineStage[] = [
+  "transcribing",
+  "writing_hooks",
+  "generating_broll",
+  "rendering",
+  "generating_cover",
 ];
 
-function buildVariations(title: string) {
-  const topic = title.toLowerCase();
-  return [
-    { label: "Bold", hook: title.toUpperCase() },
-    { label: "Curiosity", hook: `Why ${topic} matters more than you think` },
-    { label: "Controversial", hook: `The truth about ${topic} nobody tells you` },
-  ];
+const STAGE_LABELS: Record<PipelineStage, string> = {
+  transcribing: "Understanding your content",
+  writing_hooks: "Finding viral moments & generating hooks",
+  generating_broll: "Selecting B-roll",
+  rendering: "Designing layout & rendering",
+  generating_cover: "Creating cover image",
+  ready: "Done",
+  failed: "Failed",
+};
+
+interface ProjectRealtimePayload {
+  pipeline_stage: PipelineStage | null;
+  error_message: string | null;
+  status: string;
 }
 
 export function ProcessingClient({
   projectId,
   title,
+  initialStage,
+  initialError,
 }: {
   projectId: string;
   title: string;
+  initialStage: PipelineStage | null;
+  initialError: string | null;
 }) {
-  const [active, setActive] = useState(0);
+  const [stage, setStage] = useState<PipelineStage | null>(initialStage);
+  const [errorMessage, setErrorMessage] = useState<string | null>(initialError);
+  const [retrying, setRetrying] = useState(false);
   const router = useRouter();
-  const finalized = useRef(false);
 
   useEffect(() => {
-    if (active < steps.length) {
-      const t = setTimeout(() => setActive((a) => a + 1), 900);
-      return () => clearTimeout(t);
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`project-${projectId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "projects",
+          filter: `id=eq.${projectId}`,
+        },
+        (payload) => {
+          const next = payload.new as ProjectRealtimePayload;
+          setStage(next.pipeline_stage);
+          setErrorMessage(next.error_message);
+          if (next.status === "ready") {
+            router.push(`/results?projectId=${projectId}`);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [projectId, router]);
+
+  async function handleRetry() {
+    setRetrying(true);
+    try {
+      await retryPipelineAction(projectId);
+      setErrorMessage(null);
+      setStage(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Retry failed.");
+    } finally {
+      setRetrying(false);
     }
+  }
 
-    if (finalized.current) return;
-    finalized.current = true;
+  if (stage === "failed") {
+    return (
+      <div className="relative mx-auto flex min-h-[80vh] max-w-2xl flex-col items-center justify-center px-6 py-16">
+        <div className="absolute inset-0 bg-hero-glow opacity-60" />
+        <div className="relative w-full text-center">
+          <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-destructive/20">
+            <AlertTriangle className="h-7 w-7 text-destructive" />
+          </div>
+          <h1 className="mt-8 text-3xl font-semibold tracking-tight">Something went wrong</h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            {errorMessage ?? "Processing failed for an unknown reason."}
+          </p>
+          <Button
+            className="mt-8 bg-gradient-brand text-primary-foreground shadow-glow hover:opacity-95"
+            disabled={retrying}
+            onClick={handleRetry}
+          >
+            {retrying ? "Retrying…" : "Try again"}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
-    (async () => {
-      const supabase = createClient();
-      const variations = buildVariations(title);
-
-      const { error: variationsError } = await supabase
-        .from("reel_variations")
-        .insert(
-          variations.map((v, i) => ({
-            project_id: projectId,
-            label: v.label,
-            hook: v.hook,
-            is_selected: i === 0,
-          }))
-        );
-
-      const { error: updateError } = await supabase
-        .from("projects")
-        .update({ status: "ready", current_hook: variations[0].hook })
-        .eq("id", projectId);
-
-      if (variationsError || updateError) {
-        toast.error("Something went wrong finishing your reel.");
-      }
-
-      const t = setTimeout(
-        () => router.push(`/results?projectId=${projectId}`),
-        400
-      );
-      return () => clearTimeout(t);
-    })();
-  }, [active, projectId, title, router]);
-
-  const pct = Math.min(100, Math.round((active / steps.length) * 100));
+  const currentIndex = stage ? STAGE_ORDER.indexOf(stage) : -1;
+  const pct = Math.min(
+    100,
+    Math.round(((currentIndex + 1) / STAGE_ORDER.length) * 100)
+  );
 
   return (
     <div className="relative mx-auto flex min-h-[80vh] max-w-2xl flex-col items-center justify-center px-6 py-16">
@@ -89,8 +131,9 @@ export function ProcessingClient({
           Creating your{" "}
           <span className="font-display italic text-gradient-brand">viral reel</span>…
         </h1>
+        <p className="mt-2 text-sm text-muted-foreground">{title}</p>
         <p className="mt-3 text-sm text-muted-foreground">
-          This usually takes about 60 seconds. Don&apos;t refresh the page.
+          This can take a few minutes. Don&apos;t refresh the page.
         </p>
 
         <div className="mt-10 overflow-hidden rounded-full bg-surface">
@@ -101,14 +144,14 @@ export function ProcessingClient({
         </div>
 
         <div className="mt-10 space-y-3 rounded-2xl border border-border/60 bg-surface/60 p-6 text-left backdrop-blur">
-          {steps.map((s, i) => {
-            const done = i < active;
-            const doing = i === active;
+          {STAGE_ORDER.map((s, i) => {
+            const done = currentIndex > i;
+            const doing = i === currentIndex;
             return (
               <div
                 key={s}
                 className={`flex items-center gap-3 text-sm transition ${
-                  done ? "text-foreground" : doing ? "text-foreground" : "text-muted-foreground"
+                  done || doing ? "text-foreground" : "text-muted-foreground"
                 }`}
               >
                 <span
@@ -128,13 +171,15 @@ export function ProcessingClient({
                     <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
                   )}
                 </span>
-                <span>{s}</span>
+                <span>{STAGE_LABELS[s]}</span>
               </div>
             );
           })}
         </div>
 
-        <div className="mt-6 text-xs text-muted-foreground">Almost done…</div>
+        <div className="mt-6 text-xs text-muted-foreground">
+          {currentIndex === -1 ? "Starting…" : "Almost done…"}
+        </div>
       </div>
     </div>
   );

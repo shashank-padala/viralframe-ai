@@ -5,6 +5,15 @@ export type Platform = "reel" | "tiktok" | "shorts";
 export type ProjectStatus = "uploaded" | "processing" | "ready" | "failed";
 export type Layout = "top" | "bottom" | "full";
 export type BrollModel = "kling" | "runway" | "luma" | "veo";
+export type PipelineStage =
+  | "transcribing"
+  | "writing_hooks"
+  | "generating_broll"
+  | "rendering"
+  | "generating_cover"
+  | "ready"
+  | "failed";
+export type BrollClipStatus = "pending" | "generating" | "ready" | "failed";
 
 export type Json =
   | string
@@ -20,6 +29,47 @@ export type Database = {
   };
   public: {
     Tables: {
+      broll_clips: {
+        Row: {
+          created_at: string;
+          id: string;
+          model: BrollModel;
+          project_id: string;
+          prompt: string;
+          scene_index: number;
+          status: BrollClipStatus;
+          storage_path: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          model: BrollModel;
+          project_id: string;
+          prompt: string;
+          scene_index: number;
+          status?: BrollClipStatus;
+          storage_path?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          model?: BrollModel;
+          project_id?: string;
+          prompt?: string;
+          scene_index?: number;
+          status?: BrollClipStatus;
+          storage_path?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "broll_clips_project_id_fkey";
+            columns: ["project_id"];
+            isOneToOne: false;
+            referencedRelation: "projects";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           avatar_url: string | null;
@@ -54,14 +104,17 @@ export type Database = {
           cover_image_path: string | null;
           created_at: string;
           current_hook: string | null;
+          error_message: string | null;
           id: string;
           layout: Layout;
           output_video_path: string | null;
+          pipeline_stage: PipelineStage | null;
           platform: Platform;
           source_video_path: string;
           status: ProjectStatus;
           style: string;
           title: string;
+          transcript: Json | null;
           updated_at: string;
           user_id: string;
         };
@@ -71,14 +124,17 @@ export type Database = {
           cover_image_path?: string | null;
           created_at?: string;
           current_hook?: string | null;
+          error_message?: string | null;
           id?: string;
           layout?: Layout;
           output_video_path?: string | null;
+          pipeline_stage?: PipelineStage | null;
           platform?: Platform;
           source_video_path: string;
           status?: ProjectStatus;
           style?: string;
           title?: string;
+          transcript?: Json | null;
           updated_at?: string;
           user_id: string;
         };
@@ -88,14 +144,17 @@ export type Database = {
           cover_image_path?: string | null;
           created_at?: string;
           current_hook?: string | null;
+          error_message?: string | null;
           id?: string;
           layout?: Layout;
           output_video_path?: string | null;
+          pipeline_stage?: PipelineStage | null;
           platform?: Platform;
           source_video_path?: string;
           status?: ProjectStatus;
           style?: string;
           title?: string;
+          transcript?: Json | null;
           updated_at?: string;
           user_id?: string;
         };

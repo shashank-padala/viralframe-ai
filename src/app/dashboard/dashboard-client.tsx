@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { ReelMockup } from "@/components/site/reel-mockup";
 import { createClient } from "@/lib/supabase/client";
+import { dispatchPipelineAction } from "@/lib/pipeline/actions";
 import type { BrollModel, Platform } from "@/lib/supabase/types";
 
 const platforms: { id: Platform; label: string }[] = [
@@ -45,10 +46,12 @@ export function DashboardClient({
   userId,
   history,
   remainingFreeVideos,
+  plan,
 }: {
   userId: string;
   history: HistoryItem[];
   remainingFreeVideos: number;
+  plan: string;
 }) {
   const [platform, setPlatform] = useState<Platform>("reel");
   const [style, setStyle] = useState("business");
@@ -65,6 +68,10 @@ export function DashboardClient({
     }
     if (file.size > MAX_FILE_BYTES) {
       toast.error("Videos must be under 2GB.");
+      return;
+    }
+    if (plan === "free" && remainingFreeVideos <= 0) {
+      toast.error("You've used all 3 free videos this month. Upgrade to keep creating.");
       return;
     }
 
@@ -98,6 +105,12 @@ export function DashboardClient({
       toast.error(`Could not start your reel: ${insertError.message}`);
       setUploading(false);
       return;
+    }
+
+    try {
+      await dispatchPipelineAction(projectId);
+    } catch {
+      toast.error("Couldn't start processing -- see the error on the next screen.");
     }
 
     router.push(`/processing?projectId=${projectId}`);

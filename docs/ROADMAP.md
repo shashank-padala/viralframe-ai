@@ -31,45 +31,62 @@ current checklist state.
 - [ ] First deploy to Vercel (even just a preview) so the product is
       shareable and Storage/Auth redirect URLs can be finalized for prod.
 
-## Phase 2 — Replace the simulated AI with real AI
+## Phase 2 — Replace the simulated AI with real AI (built, not yet verified)
 
-This is the actual product. Everything before this phase is scaffolding.
+This is the actual product. Everything before this phase is scaffolding. All
+of the below is now real code in `scripts/pipeline/` + `remotion/`,
+orchestrated by `.github/workflows/process-video.yml` (GitHub Actions
+runners, not Vercel — chosen for the generous compute/time budget a
+fully-autonomous multi-minute render pipeline needs, with zero new infra).
+See `docs/ARCHITECTURE.md` for the full request-flow diagram. **Not yet
+runtime-verified** — see `STATUS.md` for exactly what's blocking that.
 
-- [ ] **Transcript/script extraction**: speech-to-text on the uploaded
-      video (candidate: a hosted Whisper API) to get a transcript to work
-      from, instead of just the filename.
-- [ ] **Hook generation**: LLM call over the transcript to produce the 3
-      hook variations (Bold/Curiosity/Controversial), replacing the string
-      templates in `processing-client.tsx`.
-- [ ] **B-roll sourcing**: AI video generation only — stock footage was
-      evaluated and rejected on quality grounds. `projects.broll_model`
-      (added in `0003_add_broll_model.sql`) stores the user's pick of
-      `kling` / `runway` / `luma` / `veo`, selectable on the dashboard
-      upload form, but no generation call is wired up yet — the field is
-      currently write-only. Next step: pick one model to integrate first
-      (recommend Kling, it's the default) via a hosted aggregator
-      (fal.ai/Replicate) rather than going direct to each vendor's API.
-- [ ] **Caption generation + styling**: word-level timestamps (from the STT
-      step) burned in per the selected caption style.
-- [ ] **Composition/rendering**: the actual split-screen video render (top
-      b-roll / bottom creator footage, captions, hook overlay). This needs
-      server-side video processing — Vercel Functions have execution-time
-      and memory ceilings that make in-process rendering risky for 2GB
-      inputs; likely needs a queue + worker (e.g., a container/Fly/Render
-      job, or Remotion's render pipeline) rather than a serverless function.
-- [ ] **Cover image generation**: image-gen API call composing the
-      creator's face over an AI background matching the topic (the results
-      page's Cover tab is currently a static mock of this).
-- [ ] Wire the Download/Regenerate/Share buttons on the results page to the
-      above instead of the placeholder toast.
+- [x] **Transcript/script extraction**: Deepgram (Nova-3), word-level
+      timestamps, stored in `projects.transcript`.
+- [x] **Hook generation**: `gpt-5.4-mini` structured-output call over the
+      transcript, producing the 3 hook variations (Bold/Curiosity/
+      Controversial) in the same call as the b-roll scene prompts below —
+      replaces the old string templates in `processing-client.tsx`.
+- [x] **B-roll sourcing**: AI video generation only (stock was evaluated and
+      rejected on quality grounds). Kling via fal.ai is wired up and is the
+      default (`projects.broll_model`); Runway/Luma/Veo remain selectable in
+      the UI but throw a clear "not implemented yet" error rather than
+      faking success. Per-scene clips tracked in the new `broll_clips`
+      table, generated in parallel.
+- [x] **Caption generation + styling**: word-level timestamps from the STT
+      step drive a rolling-window caption overlay in the Remotion
+      composition, with distinct visual styles per `caption_style`
+      (Hormozi/Minimal/News/Podcast).
+- [x] **Composition/rendering**: Remotion (`@remotion/renderer`,
+      self-hosted, no vendor key) compositing creator footage + b-roll +
+      captions + hook overlay per the selected layout, rendered inside the
+      GitHub Actions runner itself (a full Linux VM, not a serverless
+      function — sidesteps the execution-time/memory ceilings a Vercel
+      Function would hit on 2GB inputs).
+- [x] **Cover image generation**: a frame is extracted from the creator's
+      own video via ffmpeg, then composited over an AI-generated background
+      via OpenAI's `gpt-image-1` image-edit endpoint.
+- [x] Download/Regenerate/Share buttons on the results page wired to real
+      data (signed Storage URLs, workflow re-dispatch, clipboard copy) —
+      only the ambiguous/redundant "Edit" button next to Regenerate is still
+      a no-op toast.
+- [x] Real per-stage progress on the processing screen via a Supabase
+      Realtime subscription on `projects.pipeline_stage`, replacing the old
+      fake `setTimeout` animation. Failures surface `error_message` with a
+      retry button instead of hanging silently.
 
 ## Phase 3 — Monetization + growth
 
-- [ ] Enforce the "3 free videos/month" limit (currently just a display
-      number computed from `projects` row count — nothing blocks a 4th
-      upload).
+- [x] Enforce the "3 free videos/month" limit — a Postgres trigger
+      (`enforce_free_tier_upload_limit`) blocks a 4th free-tier upload
+      server-side, plus a client-side pre-check to avoid wasting an upload
+      that would just get rejected.
 - [ ] Stripe billing for the Creator ($19) / Pro ($49) tiers from the
-      pricing page.
+      pricing page — there's a free-tier cap now, but still no way to
+      actually become a paying user.
+- [ ] Scoped regeneration — Regenerate currently re-runs the whole pipeline
+      even for just a new cover image; fine for v1, wasteful at scale.
+- [ ] Wire up Runway/Luma/Veo b-roll generation (only Kling is implemented).
 - [ ] Brand kit (Pro tier feature — logo/colors baked into exports).
 - [ ] Templates as first-class objects (landing page currently shows 4
       static template cards that all just link to `/dashboard`).

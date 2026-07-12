@@ -22,7 +22,7 @@ export default async function Processing({
   const supabase = await createClient();
   const { data: project } = await supabase
     .from("projects")
-    .select("id, title, status")
+    .select("id, title, status, pipeline_stage, error_message")
     .eq("id", projectId)
     .single();
 
@@ -37,7 +37,12 @@ export default async function Processing({
   return (
     <div className="min-h-screen bg-background">
       <Nav />
-      <ProcessingClient projectId={project.id} title={project.title} />
+      <ProcessingClient
+        projectId={project.id}
+        title={project.title}
+        initialStage={project.pipeline_stage}
+        initialError={project.error_message}
+      />
     </div>
   );
 }
