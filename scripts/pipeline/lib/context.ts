@@ -57,6 +57,25 @@ export class PipelineContext {
     return data.signedUrl;
   }
 
+  // Used to hand a locally-generated file (e.g. a ffmpeg-extracted frame) to
+  // an external API that needs to fetch it by URL rather than accept a raw
+  // upload -- upload it to the exports bucket first, then sign it.
+  async uploadAndSignExport(
+    path: string,
+    data: Buffer,
+    contentType: string,
+    expiresInSeconds = 3600
+  ): Promise<string> {
+    await this.uploadToExports(path, data, contentType);
+    const { data: signed, error } = await this.client.storage
+      .from(EXPORT_BUCKET)
+      .createSignedUrl(path, expiresInSeconds);
+    if (error || !signed) {
+      throw new Error(`Failed to sign ${path}: ${error?.message}`);
+    }
+    return signed.signedUrl;
+  }
+
   async saveTranscript(transcript: Transcript) {
     const { error } = await this.client
       .from("projects")

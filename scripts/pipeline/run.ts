@@ -82,7 +82,7 @@ async function main() {
 
     // 5. Cover image
     await ctx.setStage("generating_cover");
-    const cover = await generateCoverImage(localCreatorVideoPath, ctx.project.title);
+    const cover = await generateCoverImage(ctx, localCreatorVideoPath, ctx.project.title);
     const coverPath = `${ctx.project.user_id}/${ctx.projectId}/cover.png`;
     await ctx.uploadToExports(coverPath, cover, "image/png");
     await ctx.setCoverImagePath(coverPath);

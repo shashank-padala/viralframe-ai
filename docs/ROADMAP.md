@@ -65,7 +65,14 @@ runtime-verified** — see `STATUS.md` for exactly what's blocking that.
       Function would hit on 2GB inputs).
 - [x] **Cover image generation**: a frame is extracted from the creator's
       own video via ffmpeg, then composited over an AI-generated background
-      via OpenAI's `gpt-image-1` image-edit endpoint.
+      via Grok Imagine's edit endpoint (`xai/grok-imagine-image/edit`, through
+      fal.ai -- same provider as b-roll, no separate key needed). Chosen over
+      OpenAI's `gpt-image-1` after checking that fal.ai also hosts Google's
+      Nano Banana models, which have documented reference-image identity
+      consistency; Grok was picked on direct observed thumbnail quality with
+      the tradeoff flagged (no documented face-preservation claim either way)
+      and an easy one-line fallback to `nano-banana-pro/edit` if real-video
+      testing shows face fidelity issues.
 - [x] Download/Regenerate/Share buttons on the results page wired to real
       data (signed Storage URLs, workflow re-dispatch, clipboard copy) —
       only the ambiguous/redundant "Edit" button next to Regenerate is still

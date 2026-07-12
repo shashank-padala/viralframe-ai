@@ -44,7 +44,7 @@ src/proxy.ts                 session refresh + route protection (Next 16's repla
 scripts/pipeline/            the actual AI pipeline — runs in GitHub Actions, not the Next.js app
   run.ts                    orchestrator: transcribe -> hooks/scenes -> b-roll -> render -> cover
   steps/                    one file per external call (Deepgram, gpt-5.6-luna, fal.ai/Kling,
-                             Remotion render, gpt-image-1 cover)
+                             Remotion render, fal.ai/Grok Imagine cover)
   lib/                      Supabase admin client, PipelineContext (stage/error/storage helpers),
                              retry/backoff, local-file staging, ffprobe
 remotion/                    the video composition Remotion renders server-side
@@ -108,7 +108,7 @@ Dashboard (client)              GitHub Actions               Processing (client)
   → router.push(/processing)          (captions, hook overlay,       same workflow)
                                        split layout)
                                        -> projects.output_video_path
-                                     5. gpt-image-1 cover                                  reads project + variations
+                                     5. Grok Imagine cover (fal.ai)                        reads project + variations
                                        (ffmpeg frame + AI bg)                               edits write straight to
                                        -> projects.cover_image_path                         Supabase on change/blur
                                      -> pipeline_stage = ready                              Download/Regenerate/Share
