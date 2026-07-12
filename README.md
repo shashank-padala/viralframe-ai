@@ -42,7 +42,7 @@ the project database.
    `https://<your-domain>/auth/callback` redirect URL (and
    `http://localhost:3000/auth/callback` for local dev). Email OTP
    (magic link) is enabled by default.
-4. Copy `.env.local.example` to `.env.local` and fill in your project's URL
+4. Copy `.env.example` to `.env.local` and fill in your project's URL
    and publishable key from Project Settings → API.
 5. `npm install && npm run dev`
 

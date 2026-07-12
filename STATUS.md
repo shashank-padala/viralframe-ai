@@ -63,7 +63,7 @@ Repo is on GitHub (private): `shashank-padala/viralframe-ai`.
 
 1. **No third-party API keys are configured yet.** `scripts/pipeline/` is
    code-complete but every external call (Deepgram, OpenAI, fal.ai) will
-   fail loudly until these are set — see `.env.local.example` for the full
+   fail loudly until these are set — see `.env.example` for the full
    list (`DEEPGRAM_API_KEY`, `OPENAI_API_KEY`, `FAL_KEY`,
    `SUPABASE_SERVICE_ROLE_KEY`). None of these should ever get the
    `NEXT_PUBLIC_` prefix.

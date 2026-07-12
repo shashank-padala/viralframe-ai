@@ -163,7 +163,7 @@ requests to `/dashboard`, `/processing`, `/results` to `/login`.
 The project uses Supabase's newer key format: `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 (`sb_publishable_...`), not the legacy JWT-style `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 All three client constructors (`client.ts`, `server.ts`, `proxy.ts`) and
-`.env.local.example` use the new name — keep it consistent if you add more
+`.env.example` use the new name — keep it consistent if you add more
 Supabase call sites.
 
 `scripts/pipeline/lib/supabaseAdmin.ts` is different: it uses
