@@ -98,13 +98,27 @@ async function generateClip(scene: BrollScene, model: BrollModel): Promise<Buffe
   });
 }
 
+interface BrollClipResult {
+  scene: BrollScene;
+  storagePath: string;
+  buffer: Buffer;
+}
+
+// Uses allSettled rather than Promise.all deliberately: Kling jobs are
+// submitted (and billed) as soon as the request is accepted, not when we
+// finish polling for the result. Promise.all rejects -- and this function
+// returns -- the instant any one scene fails, which would abandon other
+// scenes mid-poll: already paid for, generated on fal.ai's side, but never
+// downloaded or saved. allSettled lets every submitted job run to
+// completion so nothing already-charged gets thrown away, even though the
+// overall run still fails if any scene didn't make it.
 export async function generateAllBrollClips(
   ctx: PipelineContext,
   scenes: BrollScene[],
   model: BrollModel
-) {
-  return Promise.all(
-    scenes.map(async (scene) => {
+): Promise<BrollClipResult[]> {
+  const settled = await Promise.allSettled(
+    scenes.map(async (scene): Promise<BrollClipResult> => {
       const clipRow = await ctx.createBrollClip(scene.index, scene.prompt, model);
       try {
         const clipBuffer = await generateClip(scene, model);
@@ -117,5 +131,21 @@ export async function generateAllBrollClips(
         throw error;
       }
     })
+  );
+
+  const failures = settled.filter(
+    (r): r is PromiseRejectedResult => r.status === "rejected"
+  );
+  if (failures.length > 0) {
+    const detail = failures
+      .map((f) => (f.reason instanceof Error ? f.reason.message : String(f.reason)))
+      .join("; ");
+    throw new Error(
+      `${failures.length}/${scenes.length} b-roll clips failed to generate: ${detail}`
+    );
+  }
+
+  return settled.map(
+    (r) => (r as PromiseFulfilledResult<BrollClipResult>).value
   );
 }
