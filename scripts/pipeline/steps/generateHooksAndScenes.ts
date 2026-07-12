@@ -1,7 +1,7 @@
 import type { HooksAndScenesResult, Transcript } from "../lib/types";
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
-const MODEL = "gpt-5.4-mini";
+const MODEL = "gpt-5.6-luna";
 
 const HOOKS_AND_SCENES_SCHEMA = {
   name: "hooks_and_scenes",

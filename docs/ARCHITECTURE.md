@@ -43,7 +43,7 @@ src/lib/pipeline/actions.ts  Server Actions that dispatch/retry the GitHub Actio
 src/proxy.ts                 session refresh + route protection (Next 16's replacement for middleware.ts)
 scripts/pipeline/            the actual AI pipeline — runs in GitHub Actions, not the Next.js app
   run.ts                    orchestrator: transcribe -> hooks/scenes -> b-roll -> render -> cover
-  steps/                    one file per external call (Deepgram, gpt-5.4-mini, fal.ai/Kling,
+  steps/                    one file per external call (Deepgram, gpt-5.6-luna, fal.ai/Kling,
                              Remotion render, gpt-image-1 cover)
   lib/                      Supabase admin client, PipelineContext (stage/error/storage helpers),
                              retry/backoff, local-file staging, ffprobe
@@ -73,7 +73,7 @@ Four tables, all RLS-scoped to `auth.uid()`:
   `SECURITY DEFINER` trigger (`enforce_free_tier_upload_limit`) blocks a 4th
   insert in a calendar month for `plan = 'free'` users.
 - **`reel_variations`** — the 3 AI-suggested hook options per project
-  (label + hook text + `is_selected`), now written by a real `gpt-5.4-mini`
+  (label + hook text + `is_selected`), now written by a real `gpt-5.6-luna`
   structured-output call instead of string templates. Selecting one copies
   its hook into `projects.current_hook`.
 - **`broll_clips`** — one row per AI-generated b-roll scene (`scene_index`,
@@ -98,7 +98,7 @@ Dashboard (client)              GitHub Actions               Processing (client)
   file picked/dropped             (scripts/pipeline/run.ts)     Realtime subscription
   → free-tier pre-check           1. transcribe (Deepgram)       on projects row
   → storage.upload(                  -> projects.transcript      (pipeline_stage,
-      source-videos/uid/pid/file)  2. gpt-5.4-mini: hooks +       error_message)
+      source-videos/uid/pid/file)  2. gpt-5.6-luna: hooks +       error_message)
   → insert projects row               b-roll scene prompts        maps to the step list;
       (status=processing,           -> reel_variations             on status=ready,
        triggers free-tier check)  3. per-scene b-roll via          router.push(/results)
