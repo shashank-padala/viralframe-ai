@@ -14,6 +14,7 @@ export type PipelineStage =
   | "ready"
   | "failed";
 export type BrollClipStatus = "pending" | "generating" | "ready" | "failed";
+export type OutputAspectRatio = "9:16" | "16:9";
 
 export type Json =
   | string
@@ -107,6 +108,7 @@ export type Database = {
           error_message: string | null;
           id: string;
           layout: Layout;
+          output_aspect_ratio: OutputAspectRatio;
           output_video_path: string | null;
           pipeline_stage: PipelineStage | null;
           platform: Platform;
@@ -127,6 +129,7 @@ export type Database = {
           error_message?: string | null;
           id?: string;
           layout?: Layout;
+          output_aspect_ratio?: OutputAspectRatio;
           output_video_path?: string | null;
           pipeline_stage?: PipelineStage | null;
           platform?: Platform;
@@ -147,6 +150,7 @@ export type Database = {
           error_message?: string | null;
           id?: string;
           layout?: Layout;
+          output_aspect_ratio?: OutputAspectRatio;
           output_video_path?: string | null;
           pipeline_stage?: PipelineStage | null;
           platform?: Platform;

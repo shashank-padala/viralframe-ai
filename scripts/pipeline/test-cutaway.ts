@@ -89,6 +89,7 @@ async function main() {
       layout: "cutaway",
       captionStyle: ctx.project.caption_style,
       durationInSeconds: 48.5,
+      aspectRatio: "9:16",
     };
 
     console.log("Rendering...");

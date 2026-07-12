@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { AbsoluteFill, Sequence, Video, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Sequence, Video, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 
 export interface BrollClipProps {
   sceneIndex: number;
@@ -27,6 +27,10 @@ export interface ReelCompositionProps {
   layout: "top" | "bottom" | "full" | "cutaway";
   captionStyle: string;
   durationInSeconds: number;
+  // "top"/"bottom" split layouts are only meaningful in portrait -- in
+  // landscape they'd letterbox into two thin strips, so that combination
+  // isn't supported; use "cutaway" or "full" for landscape output instead.
+  aspectRatio: "9:16" | "16:9";
   // Remotion's Composition/renderMedia typings require input props to
   // satisfy Record<string, unknown>.
   [key: string]: unknown;
@@ -66,39 +70,72 @@ function BrollTrack({
   );
 }
 
-const CAPTION_STYLES: Record<string, CSSProperties> = {
+// Base = context words either side of the active one; active = the
+// karaoke-highlighted word currently being spoken. This "one word popped,
+// rest dimmed" look is the common thread across CapCut/Opus/Submagic-style
+// auto-captions and Hormozi-style creator captions alike.
+interface CaptionStyleConfig {
+  base: CSSProperties;
+  active: CSSProperties;
+}
+
+const CAPTION_STYLES: Record<string, CaptionStyleConfig> = {
   "Hormozi style": {
-    fontWeight: 900,
-    fontSize: 64,
-    color: "#FFD400",
-    textTransform: "uppercase",
-    WebkitTextStroke: "3px black",
-    letterSpacing: -1,
+    base: {
+      fontWeight: 900,
+      color: "white",
+      textTransform: "uppercase",
+      WebkitTextStroke: "0.045em black",
+      letterSpacing: -1,
+    },
+    active: {
+      fontWeight: 900,
+      color: "#FFD400",
+      textTransform: "uppercase",
+      WebkitTextStroke: "0.045em black",
+      letterSpacing: -1,
+    },
   },
   Minimal: {
-    fontWeight: 500,
-    fontSize: 44,
-    color: "white",
-    background: "rgba(0,0,0,0.55)",
-    padding: "8px 20px",
-    borderRadius: 8,
+    base: {
+      fontWeight: 500,
+      color: "rgba(255,255,255,0.7)",
+    },
+    active: {
+      fontWeight: 600,
+      color: "white",
+    },
   },
   "News style": {
-    fontWeight: 700,
-    fontSize: 48,
-    color: "white",
-    background: "#B91C1C",
-    padding: "10px 28px",
+    base: {
+      fontWeight: 700,
+      color: "rgba(255,255,255,0.8)",
+    },
+    active: {
+      fontWeight: 800,
+      color: "#FFD400",
+    },
   },
   Podcast: {
-    fontWeight: 600,
-    fontSize: 46,
-    color: "white",
-    background: "rgba(0,0,0,0.7)",
-    padding: "10px 32px",
-    borderRadius: 999,
+    base: {
+      fontWeight: 600,
+      color: "rgba(255,255,255,0.75)",
+    },
+    active: {
+      fontWeight: 700,
+      color: "white",
+    },
   },
 };
+
+const CAPTION_BACKDROP: Record<string, CSSProperties> = {
+  "Hormozi style": {},
+  Minimal: { background: "rgba(0,0,0,0.55)", borderRadius: 8 },
+  "News style": { background: "#B91C1C" },
+  Podcast: { background: "rgba(0,0,0,0.7)", borderRadius: 999 },
+};
+
+const POP_IN_SECONDS = 0.15;
 
 function CaptionOverlay({
   words,
@@ -108,41 +145,76 @@ function CaptionOverlay({
   captionStyle: string;
 }) {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
+  const { fps, width } = useVideoConfig();
   const t = frame / fps;
+  const fontSize = width * 0.06;
 
   const currentIndex = words.findIndex((w) => t >= w.start && t < w.end);
   if (currentIndex === -1) return null;
 
   const windowStart = Math.max(0, currentIndex - 1);
-  const text = words
-    .slice(windowStart, windowStart + 3)
-    .map((w) => w.word)
-    .join(" ");
+  const windowWords = words.slice(windowStart, windowStart + 3);
+  const { base, active } = CAPTION_STYLES[captionStyle] ?? CAPTION_STYLES.Minimal;
+  const backdrop = CAPTION_BACKDROP[captionStyle] ?? CAPTION_BACKDROP.Minimal;
 
-  const style = CAPTION_STYLES[captionStyle] ?? CAPTION_STYLES.Minimal;
+  const activeWord = words[currentIndex];
+  const popProgress = Math.min(1, (t - activeWord.start) / POP_IN_SECONDS);
+  const activeScale = interpolate(popProgress, [0, 1], [1.3, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   return (
-    <AbsoluteFill style={{ justifyContent: "flex-end", alignItems: "center", paddingBottom: 220 }}>
-      <div style={{ ...style, textAlign: "center", maxWidth: "85%", lineHeight: 1.15 }}>{text}</div>
+    <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", paddingBottom: "22%" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: fontSize * 0.3,
+          flexWrap: "wrap",
+          justifyContent: "center",
+          alignItems: "baseline",
+          maxWidth: "85%",
+          padding: "0.3em 0.6em",
+          ...backdrop,
+        }}
+      >
+        {windowWords.map((w, i) => {
+          const isActive = windowStart + i === currentIndex;
+          return (
+            <span
+              key={windowStart + i}
+              style={{
+                ...(isActive ? active : base),
+                fontSize,
+                lineHeight: 1.15,
+                display: "inline-block",
+                transform: isActive ? `scale(${activeScale})` : "scale(1)",
+              }}
+            >
+              {w.word}
+            </span>
+          );
+        })}
+      </div>
     </AbsoluteFill>
   );
 }
 
 function HookOverlay({ hook }: { hook: string }) {
+  const { width } = useVideoConfig();
   if (!hook) return null;
   return (
-    <AbsoluteFill style={{ justifyContent: "flex-start", alignItems: "center", paddingTop: 140 }}>
+    <AbsoluteFill style={{ justifyContent: "flex-start", alignItems: "center", paddingTop: "7%" }}>
       <div
         style={{
           maxWidth: "80%",
           background: "rgba(0,0,0,0.7)",
           borderRadius: 16,
-          padding: "16px 24px",
+          padding: "0.4em 0.6em",
           textAlign: "center",
           color: "white",
           fontWeight: 800,
-          fontSize: 40,
+          fontSize: width * 0.037,
           textTransform: "uppercase",
           lineHeight: 1.2,
         }}

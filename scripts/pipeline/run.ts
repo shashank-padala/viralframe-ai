@@ -61,6 +61,7 @@ async function runFullPipeline(ctx: PipelineContext, workDir: string) {
     layout: ctx.project.layout,
     captionStyle: ctx.project.caption_style,
     durationInSeconds,
+    aspectRatio: ctx.project.output_aspect_ratio,
   };
   const renderedVideo = await renderReel(compositionProps, localCreatorVideoPath);
   const outputPath = `${ctx.project.user_id}/${ctx.projectId}/output.mp4`;
