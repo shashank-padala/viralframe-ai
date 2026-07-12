@@ -124,6 +124,18 @@ button next to Regenerate (ambiguous/redundant with the hook `Input` right
 above it) — it still shows a plain "Not wired up yet." toast rather than
 guessing what it should do.
 
+**Scoped regeneration**: `run.ts` takes a `mode` argument (`full` |
+`cover_only`) mirrored as a `workflow_dispatch` input. `regenerateCoverAction`
+(`src/lib/pipeline/actions.ts`) dispatches `cover_only`, which skips straight
+to the cover step — no transcript, hooks, or Kling calls. This exists
+because a real test measured Kling at ~97% of per-video cost; re-running the
+whole pipeline just for a new cover would re-pay for b-roll it doesn't need.
+`pipeline_stage`/`error_message` are reused for this (not just the initial
+run) — `results-client.tsx` subscribes the same way `processing-client.tsx`
+does, but only reacts while it has a cover regen in flight, and a
+`cover_only` failure intentionally leaves `status` untouched (the video
+itself is still `ready`; only the regen attempt failed).
+
 ## Auth
 
 Google OAuth + email magic link (Supabase Auth), both triggered client-side

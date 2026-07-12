@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -19,8 +19,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { ReelMockup } from "@/components/site/reel-mockup";
 import { createClient } from "@/lib/supabase/client";
-import { retryPipelineAction } from "@/lib/pipeline/actions";
-import type { Database, Layout } from "@/lib/supabase/types";
+import { retryPipelineAction, regenerateCoverAction } from "@/lib/pipeline/actions";
+import type { Database, Layout, PipelineStage } from "@/lib/supabase/types";
 
 type Project = Database["public"]["Tables"]["projects"]["Row"];
 type Variation = Database["public"]["Tables"]["reel_variations"]["Row"];
@@ -52,9 +52,57 @@ export function ResultsClient({
   );
   const [downloading, setDownloading] = useState<"video" | "cover" | null>(null);
   const [regenerating, setRegenerating] = useState(false);
+  const [coverRegenerating, setCoverRegenerating] = useState(false);
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
   const router = useRouter();
 
   const supabase = createClient();
+
+  useEffect(() => {
+    if (!project.cover_image_path) return;
+    let cancelled = false;
+    supabase.storage
+      .from("reel-exports")
+      .createSignedUrl(project.cover_image_path, 3600)
+      .then(({ data }) => {
+        if (!cancelled) setCoverImageUrl(data?.signedUrl ?? null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [project.cover_image_path, supabase]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`project-cover-${project.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "projects",
+          filter: `id=eq.${project.id}`,
+        },
+        (payload) => {
+          const next = payload.new as { pipeline_stage: PipelineStage | null; error_message: string | null };
+          if (next.pipeline_stage === "generating_cover") return;
+          if (!coverRegenerating) return;
+          setCoverRegenerating(false);
+          if (next.pipeline_stage === "failed") {
+            toast.error(next.error_message ?? "Cover regeneration failed.");
+          } else {
+            toast.success("Cover updated.");
+            router.refresh();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project.id, coverRegenerating]);
 
   async function downloadExport(path: string | null, kind: "video" | "cover", filename: string) {
     if (!path) {
@@ -89,6 +137,16 @@ export function ResultsClient({
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Couldn't start regeneration.");
       setRegenerating(false);
+    }
+  }
+
+  async function regenerateCover() {
+    setCoverRegenerating(true);
+    try {
+      await regenerateCoverAction(project.id);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Couldn't start cover regeneration.");
+      setCoverRegenerating(false);
     }
   }
 
@@ -237,8 +295,24 @@ export function ResultsClient({
             <TabsContent value="cover" className="p-6">
               <div className="grid gap-6 md:grid-cols-[220px_1fr]">
                 <div className="relative aspect-[9/16] overflow-hidden rounded-2xl border border-white/10 bg-black">
-                  <div className="absolute inset-0 bg-gradient-brand opacity-30" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/60" />
+                  {coverImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={coverImageUrl}
+                      alt="Cover"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <>
+                      <div className="absolute inset-0 bg-gradient-brand opacity-30" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/60" />
+                    </>
+                  )}
+                  {coverRegenerating && (
+                    <div className="absolute inset-0 grid place-items-center bg-black/60 text-xs font-semibold uppercase tracking-widest text-white">
+                      Regenerating…
+                    </div>
+                  )}
                   <div className="absolute inset-x-3 top-4 text-center">
                     <div className="rounded bg-black/60 px-2 py-1 text-xs font-bold uppercase text-white">
                       <span className="bg-gradient-brand bg-clip-text text-transparent">
@@ -259,11 +333,11 @@ export function ResultsClient({
                     <Button
                       variant="outline"
                       className="border-border/60 bg-background/40"
-                      disabled={regenerating}
-                      onClick={regenerate}
+                      disabled={coverRegenerating}
+                      onClick={regenerateCover}
                     >
                       <RefreshCw className="mr-2 h-4 w-4" />
-                      {regenerating ? "Regenerating…" : "Regenerate cover"}
+                      {coverRegenerating ? "Regenerating…" : "Regenerate cover"}
                     </Button>
                     <Button
                       className="bg-gradient-brand text-primary-foreground shadow-glow hover:opacity-95"

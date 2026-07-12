@@ -91,8 +91,11 @@ runtime-verified** — see `STATUS.md` for exactly what's blocking that.
 - [ ] Stripe billing for the Creator ($19) / Pro ($49) tiers from the
       pricing page — there's a free-tier cap now, but still no way to
       actually become a paying user.
-- [ ] Scoped regeneration — Regenerate currently re-runs the whole pipeline
-      even for just a new cover image; fine for v1, wasteful at scale.
+- [x] Scoped cover regeneration — a real test showed Kling is ~97% of
+      per-video cost (~$1.40 of ~$1.43 for a 1-min video), so "Regenerate
+      cover" now dispatches the workflow with `mode=cover_only`, skipping
+      transcript/hooks/b-roll entirely instead of re-running everything.
+      "Regenerate" (Video tab, full pipeline) is unchanged.
 - [ ] Wire up Runway/Luma/Veo b-roll generation (only Kling is implemented).
 - [ ] Brand kit (Pro tier feature — logo/colors baked into exports).
 - [ ] Templates as first-class objects (landing page currently shows 4

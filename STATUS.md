@@ -8,115 +8,108 @@ Read this first in a new session. For the "why", see `docs/PRODUCT.md`,
 ## Where things stand
 
 The app is a working Next.js port of the `~/reel-magic-ai-40` mock, wired to
-a real Supabase project (`oqqfejxdewevfxnjblsi`), with a **real AI pipeline
-now built** (Phase 2 from `docs/ROADMAP.md`) — code-complete but not yet
-runtime-verified end to end because it needs third-party API keys nobody has
-supplied yet (see "NOT yet verified" below). Nothing here fakes success:
-every stage either does the real thing or fails loudly with `error_message`
-set on the project row.
+a real Supabase project (`oqqfejxdewevfxnjblsi`), with a **real AI pipeline**
+(Phase 2 from `docs/ROADMAP.md`) — and it's been **run once for real**, not
+just code-complete. Deepgram transcription and `gpt-5.6-luna` hook/scene
+generation are confirmed working against a real uploaded video. B-roll
+generation (Kling via fal.ai) is confirmed *wired correctly* (got a real,
+well-formed 403 from fal.ai, not a malformed-request error) but blocked on
+the account not having a payment method yet — that's an account setup step,
+not a code problem. Render and cover generation haven't been reached in a
+real run yet since the pipeline stops at b-roll.
 
-Auth, upload, and all results-page edits are real, same as before. What
-changed: transcript extraction, hook generation, b-roll generation,
-composition/rendering, and cover image generation are all real code paths
-now, orchestrated by a GitHub Actions workflow instead of the old
-`setTimeout` animation. See `docs/ARCHITECTURE.md` for the full pipeline
-diagram.
+Nothing here fakes success: every stage either does the real thing or fails
+loudly with `error_message` set on the project row.
 
-Build (`npm run build`) and lint (`npm run lint`) are clean as of this
-writing. `npx tsc --noEmit` is clean including `scripts/pipeline/` and
-`remotion/`. The Remotion composition bundles and resolves correctly
-(verified locally — see "Verified this session"); nothing has been rendered
-against a real video yet.
+Auth, upload, and all results-page edits are real. Cover regeneration is now
+**scoped** — a `mode=cover_only` workflow dispatch skips transcript/hooks/
+b-roll entirely, since the real test showed Kling is ~97% of per-video cost.
 
-Repo is on GitHub (private): `shashank-padala/viralframe-ai`.
+Build (`npm run build`), lint (`npm run lint`), and `npx tsc --noEmit` are
+all clean across the whole repo including `scripts/pipeline/` and
+`remotion/`.
 
-## Verified this session
+Repo is on GitHub (private): `shashank-padala/viralframe-ai`. Not deployed
+to Vercel yet.
 
-- [x] `npm run build`, `npm run lint`, `npx tsc --noEmit` all pass clean
-      across the whole repo, including `scripts/pipeline/` and `remotion/`.
-- [x] Migrations `0004_pipeline_state`, `0005_enable_realtime`,
-      `0006_free_tier_limit` all applied to the live Supabase project (on
-      top of `0001`–`0003` from earlier). No new security advisories beyond
-      the pre-existing platform-internal `rls_auto_enable` warning.
-- [x] `broll_clips` table + `projects.pipeline_stage`/`error_message`/
-      `transcript` columns exist live, confirmed via `mcp__supabase__list_tables`.
-- [x] `projects` is now in the `supabase_realtime` publication (was empty
-      before — `postgres_changes` subscriptions would have silently done
-      nothing without this).
-- [x] Free-tier limit is enforced by a Postgres trigger
-      (`enforce_free_tier_upload_limit`, `SECURITY DEFINER`, locked down
-      like `handle_new_user`) — not just a client-side check, so it can't be
-      bypassed by calling the Supabase client directly.
-- [x] `scripts/pipeline/run.ts` resolves all imports correctly under `tsx`
-      (including the `@/` path alias) and fails exactly where expected when
-      given a fake project ID / fake service-role key — confirms the
-      Supabase admin client wiring is correct.
-- [x] The Remotion composition (`remotion/`) bundles cleanly and
-      `selectComposition` resolves duration/dimensions correctly from
-      `calculateMetadata` (1080×1920 @ 30fps, verified with sample props).
-- [x] fal.ai's queue API shape (submit/status/result endpoints) and
-      OpenAI's Structured Outputs / Images edit endpoint shapes were verified
-      against current docs before writing the integration code, not assumed
-      from training data.
+## Verified this session (with a real video)
 
-## NOT yet verified — blocked on prerequisites, do these first next session
+- [x] **Real end-to-end test run** via `gh workflow run` against a real
+      uploaded video (~50s, EV-battery topic). Confirmed directly from the
+      `projects`/`reel_variations` tables, not just inferred:
+  - [x] Deepgram: `projects.transcript` populated, 114 words with
+        timestamps.
+  - [x] `gpt-5.6-luna`: 3 genuinely distinct, topical hooks landed in
+        `reel_variations` (e.g. "India spends ₹18,000 crores on EV
+        batteries—but invents almost none.") — not generic/repetitive,
+        validates the earlier nano→luna model decision.
+  - [x] 4 b-roll scene prompts generated (`broll_clips`), specific and
+        visual (e.g. "Indian laboratory, scientists examining battery cells
+        beside mineral samples and research equipment").
+  - [x] Kling/fal.ai call reached the API correctly and got a real 403
+        (`"User is locked. Reason: Exhausted balance."`) — confirms the
+        request shape (auth header, endpoint, payload) is correct; the
+        blocker is fal.ai billing, not our code.
+- [x] **Real per-video cost measured**: ~$1.43 for a 1-min video, of which
+      **Kling is ~$1.40 (97%)** — 4 clips × $0.35/clip. Deepgram + LLM +
+      cover combined are a fraction of a cent. This is why cover-only
+      regeneration was worth building now rather than deferring to Phase 3.
+- [x] All prior structural verification still holds: migrations
+      `0004`–`0006` applied live, RLS clean (no new advisories beyond the
+      pre-existing `rls_auto_enable` platform warning), `projects` in the
+      `supabase_realtime` publication, free-tier trigger enforced
+      server-side, Remotion composition bundles and resolves correctly.
+- [x] `GITHUB_ACTIONS_TOKEN` is set — as a GitHub-repo-scoped fine-grained
+      PAT (`Actions: Read and write` only), in `.env.local`, and on Vercel
+      (production + preview).
+- [x] All five GitHub Actions repo secrets are set
+      (`NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
+      `DEEPGRAM_API_KEY`, `OPENAI_API_KEY`, `FAL_KEY`).
 
-1. **No third-party API keys are configured yet.** `scripts/pipeline/` is
-   code-complete but every external call (Deepgram, OpenAI, fal.ai) will
-   fail loudly until these are set — see `.env.example` for the full
-   list (`DEEPGRAM_API_KEY`, `OPENAI_API_KEY`, `FAL_KEY`,
-   `SUPABASE_SERVICE_ROLE_KEY`). None of these should ever get the
-   `NEXT_PUBLIC_` prefix.
-2. **GitHub Actions isn't wired up yet.** `.github/workflows/process-video.yml`
-   exists but (a) the repo secrets it reads
-   (`SUPABASE_SERVICE_ROLE_KEY`/`DEEPGRAM_API_KEY`/`OPENAI_API_KEY`/`FAL_KEY`,
-   plus `NEXT_PUBLIC_SUPABASE_URL`) haven't been set on the GitHub repo, and
-   (b) it's never been triggered — `gh workflow run process-video.yml -f
-   project_id=<id>` is the fastest way to test it once secrets are in.
-3. **The app can't dispatch the workflow yet either.** `dispatchPipelineAction`
-   (`src/lib/pipeline/actions.ts`) needs `GITHUB_ACTIONS_TOKEN` (a
-   fine-grained PAT scoped to just this repo, `Actions: Read and write` only)
-   set as an env var **on Vercel** (production + preview) — not just locally.
-   The repo owner/name are hardcoded constants in that file, not env vars —
-   they're not secret and don't vary per environment.
-4. **Is Google OAuth enabled?** Still open from before — Dashboard/
-   Management-API only, no MCP tool covers this. See supabase.com/dashboard
-   → Authentication → Providers.
-5. **Full manual click-through with a real file, end to end**: upload → real
-   transcript lands in `projects.transcript` → real (non-templated) hooks in
-   `reel_variations` → real b-roll clips in `broll_clips` → a real playable
-   MP4 at `output_video_path` → a real cover image → Download/Regenerate on
-   the results page actually work. Nothing in this chain has touched a real
-   video file yet.
+## NOT yet verified — do these next
+
+1. **fal.ai billing** — add a payment method at fal.ai/dashboard/billing,
+   then re-run (`Retry` on the processing screen, or `gh workflow run` /
+   `retryPipelineAction`) to get real signal on Kling itself, Remotion
+   rendering, and the Grok Imagine cover step — none of these have been
+   reached in a real run yet.
+2. **Full manual click-through from the browser**, not just `gh workflow
+   run`: upload via the dashboard UI → the app's own `dispatchPipelineAction`
+   successfully triggers the workflow (should work now that
+   `GITHUB_ACTIONS_TOKEN` is set) → real-time progress on `/processing` →
+   land on `/results` with a real playable video and working
+   Download/Regenerate/"Regenerate cover".
+3. **Is Google OAuth enabled?** Still open — Dashboard/Management-API only,
+   no MCP tool covers this. See supabase.com/dashboard → Authentication →
+   Providers.
+4. **First Vercel deploy** — hasn't happened yet.
 
 ## Known gaps (not bugs, just unbuilt — see docs/ROADMAP.md Phase 3)
 
 - Runway/Luma/Veo b-roll models are selectable in the UI but throw a clear
-  "not implemented yet" error if picked — only Kling (the default) is wired
-  up to fal.ai.
+  "not implemented yet" error if picked — only Kling is wired up.
 - The results page "Edit" button (next to Regenerate/Download on the Video
   tab) is still a no-op toast — redundant with the hook `Input` right above
   it, left alone rather than guessing what it should do.
-- "Regenerate" (video or cover) re-runs the *entire* pipeline, not just the
-  affected stage — acceptable for v1 per the plan, real cost/latency
-  overhead if someone just wants a new cover.
-- No billing (Stripe or otherwise) — pricing tiers are static marketing
-  copy. The free-tier *count* is now enforced (3/month), but there's no way
-  to actually become a paying user yet.
-- Not deployed anywhere yet — no Vercel project linked.
+- "Regenerate" (Video tab) still re-runs the entire pipeline, including
+  Kling — fine for now, since a meaningfully different video likely needs
+  fresh b-roll anyway, but worth scoping further if it turns out people
+  mostly just want new hook text.
+- No billing (Stripe or otherwise) — the free-tier *count* is enforced
+  (3/month via a Postgres trigger), but there's no way to actually become a
+  paying user yet, and at ~$1.43/video that's a real cost center
+  (≈$4.29/month per free user) worth having Stripe in front of before wider
+  launch.
 
 ## Immediate next steps, in order
 
-1. Get the four API keys (Deepgram, OpenAI, fal.ai) + create the GitHub
-   fine-grained PAT, set them as GitHub repo secrets.
-2. `gh workflow run process-video.yml -f project_id=<a real project id>` —
-   watch it run against one real uploaded video, fix whatever breaks first
-   (most likely candidate: Remotion's Chromium deps on the GitHub-hosted
-   runner, or fal.ai's exact response shape drifting from what was verified
-   against docs).
-3. Once the workflow runs clean standalone, set `GITHUB_ACTIONS_TOKEN` on
-   Vercel and do the first deploy, then do the full click-through from the
-   browser.
-4. Enable Google OAuth in Supabase Auth settings (unrelated, still open).
-5. Then Phase 3 (`docs/ROADMAP.md`) — Stripe billing, Runway/Luma/Veo,
-   scoped regeneration instead of whole-pipeline reruns.
+1. Add a payment method to fal.ai, then re-run the pipeline (real project
+   already exists — just needs `retryPipelineAction`/`gh workflow run`
+   again) to verify Kling → Remotion render → Grok Imagine cover.
+2. Do the full browser click-through once step 1 confirms the pipeline
+   works end to end.
+3. First Vercel deploy.
+4. Enable Google OAuth (unrelated, still open).
+5. Phase 3 (`docs/ROADMAP.md`): Stripe billing (now with real cost data to
+   size pricing against), Runway/Luma/Veo, decide whether "Regenerate"
+   (video) needs finer scoping too.

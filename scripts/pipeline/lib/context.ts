@@ -47,6 +47,16 @@ export class PipelineContext {
       .eq("id", this.projectId);
   }
 
+  // Scoped-regen failure (e.g. cover-only) -- leaves `status` untouched
+  // since the project as a whole is still ready, only the background
+  // regen job failed.
+  async setCoverRegenFailed(message: string) {
+    await this.client
+      .from("projects")
+      .update({ pipeline_stage: "failed", error_message: message })
+      .eq("id", this.projectId);
+  }
+
   async getSourceVideoSignedUrl(expiresInSeconds = 3600) {
     const { data, error } = await this.client.storage
       .from(SOURCE_BUCKET)

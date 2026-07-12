@@ -7,6 +7,14 @@ on:
         description: "projects.id to process"
         required: true
         type: string
+      mode:
+        description: "full pipeline, or cover-only regeneration (skips Kling/transcript/hooks)"
+        required: false
+        type: choice
+        options:
+          - full
+          - cover_only
+        default: full
 
 jobs:
   process:
@@ -34,4 +42,5 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           FAL_KEY: ${{ secrets.FAL_KEY }}
           PROJECT_ID: ${{ inputs.project_id }}
-        run: npx tsx scripts/pipeline/run.ts "$PROJECT_ID"
+          MODE: ${{ inputs.mode }}
+        run: npx tsx scripts/pipeline/run.ts "$PROJECT_ID" "$MODE"

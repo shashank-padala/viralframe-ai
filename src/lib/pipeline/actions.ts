@@ -10,7 +10,9 @@ const WORKFLOW_REF = "main";
 const REPO_OWNER = "shashank-padala";
 const REPO_NAME = "viralframe-ai";
 
-async function dispatchWorkflow(projectId: string): Promise<void> {
+type PipelineMode = "full" | "cover_only";
+
+async function dispatchWorkflow(projectId: string, mode: PipelineMode): Promise<void> {
   const token = process.env.GITHUB_ACTIONS_TOKEN;
 
   if (!token) {
@@ -26,7 +28,7 @@ async function dispatchWorkflow(projectId: string): Promise<void> {
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
       },
-      body: JSON.stringify({ ref: WORKFLOW_REF, inputs: { project_id: projectId } }),
+      body: JSON.stringify({ ref: WORKFLOW_REF, inputs: { project_id: projectId, mode } }),
     }
   );
 
@@ -40,7 +42,7 @@ async function dispatchWorkflow(projectId: string): Promise<void> {
 // leaving it stuck in "processing" with nothing actually running.
 export async function dispatchPipelineAction(projectId: string): Promise<void> {
   try {
-    await dispatchWorkflow(projectId);
+    await dispatchWorkflow(projectId, "full");
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const supabase = await createClient();
@@ -63,4 +65,30 @@ export async function retryPipelineAction(projectId: string): Promise<void> {
     throw new Error(`Could not reset project for retry: ${error.message}`);
   }
   await dispatchPipelineAction(projectId);
+}
+
+// Regenerates only the cover image for an already-ready project. Does not
+// touch transcript/hooks/b-roll/render, and critically does not re-pay for
+// Kling -- that's the whole point of this being a separate action from
+// retryPipelineAction.
+export async function regenerateCoverAction(projectId: string): Promise<void> {
+  const supabase = await createClient();
+  const { error: resetError } = await supabase
+    .from("projects")
+    .update({ pipeline_stage: "generating_cover", error_message: null })
+    .eq("id", projectId);
+  if (resetError) {
+    throw new Error(`Could not start cover regeneration: ${resetError.message}`);
+  }
+
+  try {
+    await dispatchWorkflow(projectId, "cover_only");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    await supabase
+      .from("projects")
+      .update({ pipeline_stage: "failed", error_message: message })
+      .eq("id", projectId);
+    throw error;
+  }
 }
