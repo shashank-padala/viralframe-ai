@@ -19,7 +19,12 @@ export interface ReelCompositionProps {
   brollClips: BrollClipProps[];
   words: TranscriptWordProps[];
   hook: string;
-  layout: "top" | "bottom" | "full";
+  // "cutaway": full-screen creator video throughout, with brief full-screen
+  // b-roll takeovers only during each clip's window -- restrained b-roll at
+  // a few key moments instead of a permanent split-screen. Cheaper (far
+  // fewer clips needed) and, per real short-form editing conventions,
+  // arguably more authentic-looking than constant split-screen too.
+  layout: "top" | "bottom" | "full" | "cutaway";
   captionStyle: string;
   durationInSeconds: number;
   // Remotion's Composition/renderMedia typings require input props to
@@ -27,7 +32,13 @@ export interface ReelCompositionProps {
   [key: string]: unknown;
 }
 
-function BrollTrack({ clips }: { clips: BrollClipProps[] }) {
+function BrollTrack({
+  clips,
+  fullScreen = false,
+}: {
+  clips: BrollClipProps[];
+  fullScreen?: boolean;
+}) {
   const { fps } = useVideoConfig();
   return (
     <AbsoluteFill>
@@ -36,7 +47,18 @@ function BrollTrack({ clips }: { clips: BrollClipProps[] }) {
         const durationInFrames = Math.max(1, Math.round((clip.endSec - clip.startSec) * fps));
         return (
           <Sequence key={clip.sceneIndex} from={from} durationInFrames={durationInFrames}>
-            <Video src={clip.src} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            <Video
+              src={clip.src}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+            {fullScreen && (
+              <AbsoluteFill
+                style={{
+                  background:
+                    "linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, transparent 20%, transparent 80%, rgba(0,0,0,0.35) 100%)",
+                }}
+              />
+            )}
           </Sequence>
         );
       })}
@@ -147,6 +169,20 @@ export function ReelComposition({
     return (
       <AbsoluteFill style={{ backgroundColor: "black" }}>
         {creatorVideo}
+        <HookOverlay hook={hook} />
+        <CaptionOverlay words={words} captionStyle={captionStyle} />
+      </AbsoluteFill>
+    );
+  }
+
+  if (layout === "cutaway") {
+    return (
+      <AbsoluteFill style={{ backgroundColor: "black" }}>
+        {creatorVideo}
+        {/* Layered on top -- opaque, so it visually covers the creator
+            video only during each clip's own Sequence window, then reveals
+            the creator video again once the clip ends. */}
+        <BrollTrack clips={brollClips} fullScreen />
         <HookOverlay hook={hook} />
         <CaptionOverlay words={words} captionStyle={captionStyle} />
       </AbsoluteFill>

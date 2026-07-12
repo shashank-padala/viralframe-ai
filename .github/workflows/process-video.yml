@@ -8,12 +8,13 @@ on:
         required: true
         type: string
       mode:
-        description: "full pipeline, or cover-only regeneration (skips Kling/transcript/hooks)"
+        description: "full pipeline, cover-only regeneration, or the one-off cutaway test script"
         required: false
         type: choice
         options:
           - full
           - cover_only
+          - cutaway_test
         default: full
 
 jobs:
@@ -43,4 +44,9 @@ jobs:
           FAL_KEY: ${{ secrets.FAL_KEY }}
           PROJECT_ID: ${{ inputs.project_id }}
           MODE: ${{ inputs.mode }}
-        run: npx tsx scripts/pipeline/run.ts "$PROJECT_ID" "$MODE"
+        run: |
+          if [ "$MODE" = "cutaway_test" ]; then
+            npx tsx scripts/pipeline/test-cutaway.ts
+          else
+            npx tsx scripts/pipeline/run.ts "$PROJECT_ID" "$MODE"
+          fi
