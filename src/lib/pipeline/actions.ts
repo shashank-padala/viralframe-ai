@@ -4,20 +4,21 @@ import { createClient } from "@/lib/supabase/server";
 
 const WORKFLOW_FILE = "process-video.yml";
 const WORKFLOW_REF = "main";
+// Not secret, not environment-specific -- only changes if the repo is
+// literally renamed, which would already require touching README/docs
+// elsewhere. Not worth a Vercel env var for that.
+const REPO_OWNER = "shashank-padala";
+const REPO_NAME = "viralframe-ai";
 
 async function dispatchWorkflow(projectId: string): Promise<void> {
   const token = process.env.GITHUB_ACTIONS_TOKEN;
-  const owner = process.env.GITHUB_REPO_OWNER;
-  const repo = process.env.GITHUB_REPO_NAME;
 
-  if (!token || !owner || !repo) {
-    throw new Error(
-      "GITHUB_ACTIONS_TOKEN, GITHUB_REPO_OWNER, and GITHUB_REPO_NAME must be set to start processing."
-    );
+  if (!token) {
+    throw new Error("GITHUB_ACTIONS_TOKEN must be set to start processing.");
   }
 
   const res = await fetch(
-    `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${WORKFLOW_FILE}/dispatches`,
+    `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/workflows/${WORKFLOW_FILE}/dispatches`,
     {
       method: "POST",
       headers: {

@@ -75,9 +75,10 @@ Repo is on GitHub (private): `shashank-padala/viralframe-ai`.
    project_id=<id>` is the fastest way to test it once secrets are in.
 3. **The app can't dispatch the workflow yet either.** `dispatchPipelineAction`
    (`src/lib/pipeline/actions.ts`) needs `GITHUB_ACTIONS_TOKEN` (a
-   fine-grained PAT scoped to this repo, `actions: write`),
-   `GITHUB_REPO_OWNER`, `GITHUB_REPO_NAME` set as env vars **on Vercel**
-   (production + preview) — not just locally.
+   fine-grained PAT scoped to just this repo, `Actions: Read and write` only)
+   set as an env var **on Vercel** (production + preview) — not just locally.
+   The repo owner/name are hardcoded constants in that file, not env vars —
+   they're not secret and don't vary per environment.
 4. **Is Google OAuth enabled?** Still open from before — Dashboard/
    Management-API only, no MCP tool covers this. See supabase.com/dashboard
    → Authentication → Providers.
@@ -113,9 +114,9 @@ Repo is on GitHub (private): `shashank-padala/viralframe-ai`.
    (most likely candidate: Remotion's Chromium deps on the GitHub-hosted
    runner, or fal.ai's exact response shape drifting from what was verified
    against docs).
-3. Once the workflow runs clean standalone, set `GITHUB_ACTIONS_TOKEN` /
-   `GITHUB_REPO_OWNER` / `GITHUB_REPO_NAME` on Vercel and do the first
-   deploy, then do the full click-through from the browser.
+3. Once the workflow runs clean standalone, set `GITHUB_ACTIONS_TOKEN` on
+   Vercel and do the first deploy, then do the full click-through from the
+   browser.
 4. Enable Google OAuth in Supabase Auth settings (unrelated, still open).
 5. Then Phase 3 (`docs/ROADMAP.md`) — Stripe billing, Runway/Luma/Veo,
    scoped regeneration instead of whole-pipeline reruns.
