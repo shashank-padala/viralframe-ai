@@ -40,7 +40,6 @@ async function generateClip(scene: BrollScene, model: BrollModel): Promise<Buffe
 interface BrollClipResult {
   scene: BrollScene;
   storagePath: string;
-  buffer: Buffer;
 }
 
 // Uses allSettled rather than Promise.all deliberately: Kling jobs are
@@ -64,7 +63,7 @@ export async function generateAllBrollClips(
         const path = `${ctx.project.user_id}/${ctx.projectId}/broll-${scene.index}.mp4`;
         await ctx.uploadBrollClip(path, clipBuffer, "video/mp4");
         await ctx.markBrollClipReady(clipRow.id, path);
-        return { scene, storagePath: path, buffer: clipBuffer };
+        return { scene, storagePath: path };
       } catch (error) {
         await ctx.markBrollClipFailed(clipRow.id);
         throw error;

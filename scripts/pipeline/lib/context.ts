@@ -157,6 +157,19 @@ export class PipelineContext {
     return path;
   }
 
+  // For an already-uploaded export path -- Remotion's renderer needs a
+  // fetchable HTTP URL for every video source, not a local file path
+  // (headless Chrome has no filesystem access).
+  async getExportsSignedUrl(path: string, expiresInSeconds = 3600) {
+    const { data, error } = await this.client.storage
+      .from(EXPORT_BUCKET)
+      .createSignedUrl(path, expiresInSeconds);
+    if (error || !data) {
+      throw new Error(`Failed to sign ${path}: ${error?.message}`);
+    }
+    return data.signedUrl;
+  }
+
   async setOutputVideoPath(path: string) {
     const { error } = await this.client
       .from("projects")

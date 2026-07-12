@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 
 import { createAdminClient } from "./lib/supabaseAdmin";
 import { PipelineContext } from "./lib/context";
-import { downloadToFile, writeBufferToFile } from "./lib/download";
+import { downloadToFile } from "./lib/download";
 import { getVideoDurationSeconds } from "./lib/ffprobe";
 import { transcribe } from "./steps/transcribe";
 import { generateHooksAndScenes } from "./steps/generateHooksAndScenes";
@@ -36,30 +36,28 @@ async function runFullPipeline(ctx: PipelineContext, workDir: string) {
       ? []
       : await generateAllBrollClips(ctx, scenes, ctx.project.broll_model);
 
-  // Stage local files -- rendering reads local paths, not remote URLs, so
-  // the render doesn't depend on network availability mid-render.
+  // Local copy is only needed for ffprobe (duration) and the cover step's
+  // ffmpeg frame extraction -- both are local binaries. Rendering itself
+  // needs a fetchable URL, not a local path (Remotion's renderer runs
+  // headless Chrome, which has no filesystem access).
   const localCreatorVideoPath = path.join(workDir, "creator.mp4");
   await downloadToFile(sourceVideoUrl, localCreatorVideoPath);
 
-  const localBrollClips = await Promise.all(
-    brollResults.map(async (result) => {
-      const localPath = path.join(workDir, `broll-${result.scene.index}.mp4`);
-      await writeBufferToFile(result.buffer, localPath);
-      return {
-        sceneIndex: result.scene.index,
-        startSec: result.scene.startSec,
-        endSec: result.scene.endSec,
-        src: localPath,
-      };
-    })
+  const brollClipsWithUrls = await Promise.all(
+    brollResults.map(async (result) => ({
+      sceneIndex: result.scene.index,
+      startSec: result.scene.startSec,
+      endSec: result.scene.endSec,
+      src: await ctx.getExportsSignedUrl(result.storagePath),
+    }))
   );
 
   // 4. Render
   await ctx.setStage("rendering");
   const durationInSeconds = await getVideoDurationSeconds(localCreatorVideoPath);
   const compositionProps: ReelCompositionProps = {
-    creatorVideoSrc: localCreatorVideoPath,
-    brollClips: localBrollClips,
+    creatorVideoSrc: sourceVideoUrl,
+    brollClips: brollClipsWithUrls,
     words: transcript.words,
     hook: hooks[0]?.hook ?? "",
     layout: ctx.project.layout,

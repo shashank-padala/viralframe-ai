@@ -11,9 +11,3 @@ export async function downloadToFile(url: string, destPath: string): Promise<str
   await fs.writeFile(destPath, buffer);
   return destPath;
 }
-
-export async function writeBufferToFile(buffer: Buffer, destPath: string): Promise<string> {
-  await fs.mkdir(path.dirname(destPath), { recursive: true });
-  await fs.writeFile(destPath, buffer);
-  return destPath;
-}

@@ -7,14 +7,8 @@
 //    due to the now-fixed 405 bug)
 // No new Kling generations, no new spend. Just to see the cutaway style.
 
-import path from "node:path";
-import os from "node:os";
-import fs from "node:fs/promises";
-
 import { createAdminClient } from "./lib/supabaseAdmin";
 import { PipelineContext } from "./lib/context";
-import { downloadToFile, writeBufferToFile } from "./lib/download";
-import { downloadFromUrl } from "./lib/fal";
 import { renderReel } from "./steps/render";
 import type { ReelCompositionProps } from "../../remotion/ReelComposition";
 
@@ -35,7 +29,7 @@ interface FalKlingResult {
   video?: { url: string };
 }
 
-async function fetchCompletedClip(requestId: string): Promise<Buffer> {
+async function fetchCompletedClipUrl(requestId: string): Promise<string> {
   const apiKey = process.env.FAL_KEY;
   if (!apiKey) throw new Error("FAL_KEY is not set");
   const res = await fetch(`${FAL_KLING_BASE}/${requestId}`, {
@@ -49,7 +43,7 @@ async function fetchCompletedClip(requestId: string): Promise<Buffer> {
   if (!videoUrl) {
     throw new Error(`fal.ai result ${requestId} is missing video.url (may have expired)`);
   }
-  return downloadFromUrl(videoUrl);
+  return videoUrl;
 }
 
 async function main() {
@@ -62,55 +56,45 @@ async function main() {
   } | null;
   if (!transcript) throw new Error("Project has no transcript saved");
 
-  const workDir = await fs.mkdtemp(path.join(os.tmpdir(), "cutaway-test-"));
+  console.log("Fetching already-completed clip URLs (no new generation)...");
+  const brollClips = await Promise.all(
+    CLIPS.map(async (clip, i) => {
+      console.log(`  - ${clip.label} (${clip.requestId})`);
+      const src = await fetchCompletedClipUrl(clip.requestId);
+      return {
+        sceneIndex: i,
+        startSec: clip.startSec,
+        endSec: clip.startSec + CLIP_WINDOW_SECONDS,
+        src,
+      };
+    })
+  );
 
-  try {
-    console.log("Fetching already-completed clips (no new generation)...");
-    const brollClips = await Promise.all(
-      CLIPS.map(async (clip, i) => {
-        console.log(`  - ${clip.label} (${clip.requestId})`);
-        const buffer = await fetchCompletedClip(clip.requestId);
-        const localPath = path.join(workDir, `broll-${i}.mp4`);
-        await writeBufferToFile(buffer, localPath);
-        return {
-          sceneIndex: i,
-          startSec: clip.startSec,
-          endSec: clip.startSec + CLIP_WINDOW_SECONDS,
-          src: localPath,
-        };
-      })
-    );
+  console.log("Getting creator source video URL...");
+  const creatorVideoSrc = await ctx.getSourceVideoSignedUrl();
 
-    console.log("Downloading creator source video...");
-    const sourceVideoUrl = await ctx.getSourceVideoSignedUrl();
-    const localCreatorVideoPath = path.join(workDir, "creator.mp4");
-    await downloadToFile(sourceVideoUrl, localCreatorVideoPath);
+  const compositionProps: ReelCompositionProps = {
+    creatorVideoSrc,
+    brollClips,
+    words: transcript.words,
+    hook: ctx.project.current_hook ?? "",
+    layout: "cutaway",
+    captionStyle: ctx.project.caption_style,
+    durationInSeconds: 48.5,
+  };
 
-    const compositionProps: ReelCompositionProps = {
-      creatorVideoSrc: localCreatorVideoPath,
-      brollClips,
-      words: transcript.words,
-      hook: ctx.project.current_hook ?? "",
-      layout: "cutaway",
-      captionStyle: ctx.project.caption_style,
-      durationInSeconds: 48.5,
-    };
+  console.log("Rendering...");
+  const renderedVideo = await renderReel(compositionProps);
 
-    console.log("Rendering...");
-    const renderedVideo = await renderReel(compositionProps);
+  const outputPath = `${ctx.project.user_id}/${ctx.projectId}/test-cutaway.mp4`;
+  await ctx.uploadToExports(outputPath, renderedVideo, "video/mp4");
 
-    const outputPath = `${ctx.project.user_id}/${ctx.projectId}/test-cutaway.mp4`;
-    await ctx.uploadToExports(outputPath, renderedVideo, "video/mp4");
+  const { data: signed } = await client.storage
+    .from("reel-exports")
+    .createSignedUrl(outputPath, 3600);
 
-    const { data: signed } = await client.storage
-      .from("reel-exports")
-      .createSignedUrl(outputPath, 3600);
-
-    console.log("\nDone. Download URL (valid 1 hour):");
-    console.log(signed?.signedUrl);
-  } finally {
-    await fs.rm(workDir, { recursive: true, force: true });
-  }
+  console.log("\nDone. Download URL (valid 1 hour):");
+  console.log(signed?.signedUrl);
 }
 
 main().catch((error) => {

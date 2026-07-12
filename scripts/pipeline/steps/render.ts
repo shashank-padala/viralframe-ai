@@ -7,10 +7,17 @@ import type { ReelCompositionProps } from "../../../remotion/ReelComposition";
 
 const COMPOSITION_ID = "Reel";
 
-// Renders the final composited reel and returns the encoded MP4 bytes. Inputs
-// (creatorVideoSrc, each brollClips[].src) must be local file paths, not
-// remote URLs -- callers are responsible for staging those files first so
-// the render doesn't depend on network availability mid-render.
+// Renders the final composited reel and returns the encoded MP4 bytes.
+//
+// Inputs (creatorVideoSrc, each brollClips[].src) must be remote HTTP(S)
+// URLs, not local file paths. Remotion's renderer runs headless Chrome,
+// which has no filesystem access -- it can only fetch assets over HTTP.
+// Passing a bare absolute path (e.g. "/tmp/x/video.mp4") produces a 404
+// against Remotion's local dev server, which treats it as a URL path, not
+// an OS path. (Remotion's own docs confirm this: local files must be
+// served, e.g. via `staticFile()` from the bundled public/ dir -- neither
+// of which fits dynamically-downloaded per-render assets. Passing the
+// already-available remote URL directly is simpler and correct.)
 export async function renderReel(props: ReelCompositionProps): Promise<Buffer> {
   const entryPoint = path.join(process.cwd(), "remotion", "index.ts");
   const serveUrl = await bundle({ entryPoint });
