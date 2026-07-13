@@ -1,5 +1,4 @@
-import type { CSSProperties } from "react";
-import { AbsoluteFill, OffthreadVideo, Sequence, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, OffthreadVideo, Sequence, useVideoConfig } from "remotion";
 
 export interface BrollClipProps {
   sceneIndex: number;
@@ -70,136 +69,6 @@ function BrollTrack({
   );
 }
 
-// Base = context words either side of the active one; active = the
-// karaoke-highlighted word currently being spoken. This "one word popped,
-// rest dimmed" look is the common thread across CapCut/Opus/Submagic-style
-// auto-captions and Hormozi-style creator captions alike.
-interface CaptionStyleConfig {
-  base: CSSProperties;
-  active: CSSProperties;
-}
-
-const CAPTION_STYLES: Record<string, CaptionStyleConfig> = {
-  "Hormozi style": {
-    base: {
-      fontWeight: 900,
-      color: "white",
-      textTransform: "uppercase",
-      WebkitTextStroke: "0.045em black",
-      letterSpacing: -1,
-    },
-    active: {
-      fontWeight: 900,
-      color: "#FFD400",
-      textTransform: "uppercase",
-      WebkitTextStroke: "0.045em black",
-      letterSpacing: -1,
-    },
-  },
-  Minimal: {
-    base: {
-      fontWeight: 500,
-      color: "rgba(255,255,255,0.7)",
-    },
-    active: {
-      fontWeight: 600,
-      color: "white",
-    },
-  },
-  "News style": {
-    base: {
-      fontWeight: 700,
-      color: "rgba(255,255,255,0.8)",
-    },
-    active: {
-      fontWeight: 800,
-      color: "#FFD400",
-    },
-  },
-  Podcast: {
-    base: {
-      fontWeight: 600,
-      color: "rgba(255,255,255,0.75)",
-    },
-    active: {
-      fontWeight: 700,
-      color: "white",
-    },
-  },
-};
-
-const CAPTION_BACKDROP: Record<string, CSSProperties> = {
-  "Hormozi style": {},
-  Minimal: { background: "rgba(0,0,0,0.55)", borderRadius: 8 },
-  "News style": { background: "#B91C1C" },
-  Podcast: { background: "rgba(0,0,0,0.7)", borderRadius: 999 },
-};
-
-const POP_IN_SECONDS = 0.15;
-
-function CaptionOverlay({
-  words,
-  captionStyle,
-}: {
-  words: TranscriptWordProps[];
-  captionStyle: string;
-}) {
-  const frame = useCurrentFrame();
-  const { fps, width } = useVideoConfig();
-  const t = frame / fps;
-  const fontSize = width * 0.06;
-
-  const currentIndex = words.findIndex((w) => t >= w.start && t < w.end);
-  if (currentIndex === -1) return null;
-
-  const windowStart = Math.max(0, currentIndex - 1);
-  const windowWords = words.slice(windowStart, windowStart + 3);
-  const { base, active } = CAPTION_STYLES[captionStyle] ?? CAPTION_STYLES.Minimal;
-  const backdrop = CAPTION_BACKDROP[captionStyle] ?? CAPTION_BACKDROP.Minimal;
-
-  const activeWord = words[currentIndex];
-  const popProgress = Math.min(1, (t - activeWord.start) / POP_IN_SECONDS);
-  const activeScale = interpolate(popProgress, [0, 1], [1.3, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  return (
-    <AbsoluteFill style={{ justifyContent: "center", alignItems: "center", paddingBottom: "22%" }}>
-      <div
-        style={{
-          display: "flex",
-          gap: fontSize * 0.3,
-          flexWrap: "wrap",
-          justifyContent: "center",
-          alignItems: "baseline",
-          maxWidth: "85%",
-          padding: "0.3em 0.6em",
-          ...backdrop,
-        }}
-      >
-        {windowWords.map((w, i) => {
-          const isActive = windowStart + i === currentIndex;
-          return (
-            <span
-              key={windowStart + i}
-              style={{
-                ...(isActive ? active : base),
-                fontSize,
-                lineHeight: 1.15,
-                display: "inline-block",
-                transform: isActive ? `scale(${activeScale})` : "scale(1)",
-              }}
-            >
-              {w.word}
-            </span>
-          );
-        })}
-      </div>
-    </AbsoluteFill>
-  );
-}
-
 function HookOverlay({ hook }: { hook: string }) {
   const { width } = useVideoConfig();
   if (!hook) return null;
@@ -228,10 +97,8 @@ function HookOverlay({ hook }: { hook: string }) {
 export function ReelComposition({
   creatorVideoSrc,
   brollClips,
-  words,
   hook,
   layout,
-  captionStyle,
 }: ReelCompositionProps) {
   const creatorVideo = (
     <OffthreadVideo src={creatorVideoSrc} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -242,7 +109,6 @@ export function ReelComposition({
       <AbsoluteFill style={{ backgroundColor: "black" }}>
         {creatorVideo}
         <HookOverlay hook={hook} />
-        <CaptionOverlay words={words} captionStyle={captionStyle} />
       </AbsoluteFill>
     );
   }
@@ -256,7 +122,6 @@ export function ReelComposition({
             the creator video again once the clip ends. */}
         <BrollTrack clips={brollClips} fullScreen />
         <HookOverlay hook={hook} />
-        <CaptionOverlay words={words} captionStyle={captionStyle} />
       </AbsoluteFill>
     );
   }
@@ -290,7 +155,6 @@ export function ReelComposition({
         {creatorVideo}
       </div>
       <HookOverlay hook={hook} />
-      <CaptionOverlay words={words} captionStyle={captionStyle} />
     </AbsoluteFill>
   );
 }
