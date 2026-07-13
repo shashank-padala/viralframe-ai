@@ -89,6 +89,12 @@ export async function renderReel(
       codec: "h264",
       outputLocation,
       inputProps: fullProps,
+      // Remotion's defaults (imageFormat: "jpeg", jpegQuality: 80) JPEG-
+      // compress every captured frame before the h264 encode even runs --
+      // a real double-lossy pass that visibly softened output vs the
+      // source. crf 18 is the standard "visually lossless" h264 target.
+      jpegQuality: 100,
+      crf: 18,
     });
 
     const output = await fs.readFile(outputLocation);
