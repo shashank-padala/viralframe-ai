@@ -138,7 +138,7 @@ export function DashboardClient({
           </div>
           <h1 className="mt-2 text-4xl font-semibold tracking-tight">
             Create a{" "}
-            <span className="font-display italic text-gradient-brand">viral reel</span>
+            <span className="font-display italic text-highlight">viral reel</span>
           </h1>
         </div>
         <div className="hidden text-sm text-muted-foreground md:block">
@@ -153,7 +153,7 @@ export function DashboardClient({
           href="/editor"
           className="mt-8 flex items-center gap-4 rounded-2xl border border-border/60 bg-surface/40 p-5 transition hover:border-brand/40"
         >
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-brand shadow-glow">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-brand shadow-elevated">
             <Type className="h-5 w-5 text-primary-foreground" />
           </span>
           <span className="min-w-0 flex-1">
@@ -193,7 +193,7 @@ export function DashboardClient({
           >
             <div className="absolute inset-0 bg-grid opacity-40 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]" />
             <div className="relative flex flex-col items-center text-center">
-              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-brand shadow-glow">
+              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-brand shadow-elevated">
                 {uploading ? (
                   <Loader2 className="h-6 w-6 animate-spin text-primary-foreground" />
                 ) : (
@@ -232,7 +232,7 @@ export function DashboardClient({
                     onClick={() => setPlatform(p.id)}
                     className={`rounded-full border px-3 py-1.5 text-sm transition ${
                       platform === p.id
-                        ? "border-transparent bg-gradient-brand text-primary-foreground shadow-glow"
+                        ? "border-transparent bg-gradient-brand text-primary-foreground shadow-elevated"
                         : "border-border/60 bg-background/40 text-muted-foreground hover:text-foreground"
                     }`}
                   >
@@ -291,7 +291,7 @@ export function DashboardClient({
             <ReelMockup compact hook="Your hook will go here" />
           </div>
           <Button
-            className="mt-6 w-full bg-gradient-brand text-primary-foreground shadow-glow hover:opacity-95"
+            className="mt-6 w-full bg-gradient-brand text-primary-foreground shadow-elevated hover:opacity-95"
             disabled={uploading}
             onClick={() => fileInputRef.current?.click()}
           >

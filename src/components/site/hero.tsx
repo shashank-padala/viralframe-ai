@@ -9,7 +9,7 @@ import { CaptionMorph } from "./caption-morph";
 import { TOTAL_CORRECTIONS } from "@/lib/hero-corrections";
 import { useIsDesktop, useReducedMotion } from "@/lib/use-media-query";
 
-// Loaded on the client only, after first paint. The static `bg-hero-glow`
+// Loaded on the client only, after first paint. The static `bg-hero-wash`
 // gradient underneath is what the user actually sees first, so the WebGL
 // layer is pure enhancement -- if the chunk is slow, blocked, or WebGL is
 // unavailable, the hero is unchanged apart from the drift.
@@ -42,9 +42,9 @@ export function Hero() {
   return (
     <section className="relative overflow-hidden">
       {/* Layer 1 — static gradient, always present; WebGL drifts on top. */}
-      <div className="absolute inset-0 bg-hero-glow" />
+      <div className="absolute inset-0 bg-hero-wash" />
       {isDesktop && !reducedMotion && (
-        <div className="absolute inset-0 opacity-70">
+        <div className="absolute inset-0 opacity-60">
           <AuroraBackdrop reducedMotion={reducedMotion} />
         </div>
       )}
@@ -53,13 +53,13 @@ export function Hero() {
       <div className="relative mx-auto grid max-w-7xl items-center gap-16 px-6 pb-24 pt-20 lg:grid-cols-[1.05fr_1fr] lg:pt-28">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-surface/60 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
-            <span className="h-1.5 w-1.5 rounded-full bg-brand shadow-glow" />
+            <span className="h-1.5 w-1.5 rounded-full bg-brand shadow-elevated" />
             Built for accented English
           </div>
 
           <h1 className="mt-6 text-5xl font-semibold leading-[1.02] tracking-tight md:text-7xl">
             Stop fixing{" "}
-            <span className="font-display italic text-gradient-brand">the same words</span>{" "}
+            <span className="font-display italic text-highlight">the same words</span>{" "}
             after every export.
           </h1>
 
@@ -72,7 +72,7 @@ export function Hero() {
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Button
               size="lg"
-              className="bg-gradient-brand text-primary-foreground shadow-glow hover:opacity-95"
+              className="bg-gradient-brand text-primary-foreground shadow-elevated hover:opacity-95"
               asChild
             >
               <Link href="/dashboard">

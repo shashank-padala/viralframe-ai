@@ -93,7 +93,7 @@ export function ProcessingClient({
   if (stage === "failed") {
     return (
       <div className="relative mx-auto flex min-h-[80vh] max-w-2xl flex-col items-center justify-center px-6 py-16">
-        <div className="absolute inset-0 bg-hero-glow opacity-60" />
+        <div className="absolute inset-0 bg-hero-wash opacity-60" />
         <div className="relative w-full text-center">
           <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-destructive/20">
             <AlertTriangle className="h-7 w-7 text-destructive" />
@@ -103,7 +103,7 @@ export function ProcessingClient({
             {errorMessage ?? "Processing failed for an unknown reason."}
           </p>
           <Button
-            className="mt-8 bg-gradient-brand text-primary-foreground shadow-glow hover:opacity-95"
+            className="mt-8 bg-gradient-brand text-primary-foreground shadow-elevated hover:opacity-95"
             disabled={retrying}
             onClick={handleRetry}
           >
@@ -122,14 +122,14 @@ export function ProcessingClient({
 
   return (
     <div className="relative mx-auto flex min-h-[80vh] max-w-2xl flex-col items-center justify-center px-6 py-16">
-      <div className="absolute inset-0 bg-hero-glow opacity-60" />
+      <div className="absolute inset-0 bg-hero-wash opacity-60" />
       <div className="relative w-full text-center">
-        <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-gradient-brand shadow-glow">
+        <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-gradient-brand shadow-elevated">
           <Sparkles className="h-7 w-7 animate-pulse text-primary-foreground" />
         </div>
         <h1 className="mt-8 text-4xl font-semibold tracking-tight md:text-5xl">
           Creating your{" "}
-          <span className="font-display italic text-gradient-brand">viral reel</span>…
+          <span className="font-display italic text-highlight">viral reel</span>…
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">{title}</p>
         <p className="mt-3 text-sm text-muted-foreground">

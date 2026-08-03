@@ -42,12 +42,12 @@ export default function Pricing() {
     <div className="min-h-screen bg-background">
       <Nav />
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-hero-glow opacity-70" />
+        <div className="absolute inset-0 bg-hero-wash opacity-70" />
         <div className="relative mx-auto max-w-6xl px-6 py-24 text-center">
           <div className="text-xs font-semibold uppercase tracking-widest text-brand">Pricing</div>
           <h1 className="mt-3 text-5xl font-semibold tracking-tight md:text-6xl">
             Simple plans.{" "}
-            <span className="font-display italic text-gradient-brand">Viral output.</span>
+            <span className="font-display italic text-highlight">Viral output.</span>
           </h1>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
             Start free. Upgrade when your reels start hitting.
@@ -62,7 +62,7 @@ export default function Pricing() {
               key={t.name}
               className={`relative overflow-hidden rounded-2xl border p-8 ${
                 t.highlight
-                  ? "border-brand/50 bg-surface shadow-glow"
+                  ? "border-brand/50 bg-surface shadow-elevated"
                   : "border-border/60 bg-surface/40"
               }`}
             >
@@ -90,7 +90,7 @@ export default function Pricing() {
                 asChild
                 className={`mt-10 w-full ${
                   t.highlight
-                    ? "bg-gradient-brand text-primary-foreground shadow-glow hover:opacity-95"
+                    ? "bg-gradient-brand text-primary-foreground shadow-elevated hover:opacity-95"
                     : "bg-surface-2 text-foreground hover:bg-surface-2/80"
                 }`}
               >

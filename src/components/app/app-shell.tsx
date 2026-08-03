@@ -25,7 +25,10 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
   items.push({ href: "/pricing", label: "Pricing", icon: "pricing" });
 
   return (
-    <div className="flex min-h-screen bg-background">
+    // `dark` is scoped here rather than on <html>: the marketing pages are
+    // light, and the app is dark because judging video against bright chrome
+    // is measurably harder -- which is why every video editor ships dark.
+    <div className="dark flex min-h-screen bg-background text-foreground">
       <SideNav
         items={items}
         footer={

@@ -14,7 +14,7 @@ export async function Nav() {
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/70 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-brand shadow-glow">
+          <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-brand shadow-elevated">
             <Sparkles className="h-4 w-4 text-primary-foreground" />
           </span>
           <span className="text-[15px] font-semibold tracking-tight">
@@ -43,7 +43,7 @@ export async function Nav() {
               <Button variant="ghost" size="sm" asChild>
                 <Link href="/login">Log in</Link>
               </Button>
-              <Button size="sm" className="bg-gradient-brand text-primary-foreground shadow-glow hover:opacity-95" asChild>
+              <Button size="sm" className="bg-gradient-brand text-primary-foreground shadow-elevated hover:opacity-95" asChild>
                 <Link href="/dashboard">Get Started</Link>
               </Button>
             </>

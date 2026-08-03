@@ -48,19 +48,25 @@ const FRAGMENT = /* glsl */ `
     vec2 uv = vUv;
     float t = uTime * 0.06;
 
-    vec2 c1 = vec2(0.22 + sin(t) * 0.06, 0.92 + cos(t * 0.8) * 0.05);
-    vec2 c2 = vec2(0.86 + cos(t * 0.7) * 0.07, 0.86 + sin(t * 1.1) * 0.05);
-    vec2 c3 = vec2(0.50 + sin(t * 0.5) * 0.10, 0.05 + cos(t * 0.6) * 0.04);
+    vec2 c1 = vec2(0.18 + sin(t) * 0.06, 0.94 + cos(t * 0.8) * 0.05);
+    vec2 c2 = vec2(0.88 + cos(t * 0.7) * 0.07, 0.88 + sin(t * 1.1) * 0.05);
+    vec2 c3 = vec2(0.52 + sin(t * 0.5) * 0.10, 0.06 + cos(t * 0.6) * 0.04);
 
-    vec3 colour = uViolet * lobe(uv, c1, 0.75) * 0.55;
-    colour += uBlue * lobe(uv, c2, 0.65) * 0.42;
-    colour += uAmber * lobe(uv, c3, 0.55) * 0.30;
+    float i1 = lobe(uv, c1, 0.80);
+    float i2 = lobe(uv, c2, 0.68);
+    float i3 = lobe(uv, c3, 0.58);
 
-    // Fade out toward the bottom so the section blends into the page
-    // instead of ending on a hard edge.
-    colour *= smoothstep(0.0, 0.45, uv.y);
+    vec3 colour = uViolet * i1 + uBlue * i2 + uAmber * i3;
+    float intensity = i1 * 0.55 + i2 * 0.35 + i3 * 0.30;
 
-    gl_FragColor = vec4(colour, 1.0);
+    // Fade toward the bottom so the section blends into the page instead of
+    // ending on a hard edge.
+    float fade = smoothstep(0.0, 0.5, uv.y);
+
+    // Alpha carries the intensity rather than being opaque. With alpha 1.0
+    // this painted solid black everywhere the lobes were dark, which is
+    // invisible on a dark page and catastrophic on a light one.
+    gl_FragColor = vec4(colour, clamp(intensity * fade, 0.0, 1.0));
   }
 `;
 
@@ -94,12 +100,12 @@ export default function AuroraBackdrop({ reducedMotion }: { reducedMotion: boole
       uniforms: {
         uTime: { value: 0 },
         uResolution: { value: new Vector2(container.clientWidth, container.clientHeight) },
-        // Approximations of the OKLCH brand tokens in linear-ish sRGB.
-        // Kept close to --gradient-hero so the WebGL layer and the CSS
-        // fallback read as the same design.
-        uViolet: { value: [0.72, 0.29, 0.92] },
-        uBlue: { value: [0.32, 0.45, 0.95] },
-        uAmber: { value: [0.98, 0.65, 0.25] },
+        // Tuned for the light page: the caption yellow plus two near-neutral
+        // warm/cool greys. Low chroma on purpose -- this sits behind a
+        // headline and must never compete with it.
+        uViolet: { value: [1.0, 0.83, 0.25] },
+        uBlue: { value: [0.62, 0.64, 0.70] },
+        uAmber: { value: [0.96, 0.90, 0.80] },
       },
     });
     const mesh = new Mesh(new PlaneGeometry(2, 2), material);

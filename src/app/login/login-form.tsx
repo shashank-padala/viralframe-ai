@@ -94,7 +94,7 @@ export function LoginForm({ redirectTo }: { redirectTo: string }) {
         <Button
           type="submit"
           disabled={emailPending}
-          className="w-full bg-gradient-brand text-primary-foreground shadow-glow hover:opacity-95"
+          className="w-full bg-gradient-brand text-primary-foreground shadow-elevated hover:opacity-95"
         >
           {emailPending ? "Sending link…" : "Sign in with email"}
         </Button>

@@ -202,7 +202,7 @@ export function ResultsClient({
           </div>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
             Your{" "}
-            <span className="font-display italic text-gradient-brand">viral reel</span>{" "}
+            <span className="font-display italic text-highlight">viral reel</span>{" "}
             is ready
           </h1>
         </div>
@@ -211,7 +211,7 @@ export function ResultsClient({
             <Share2 className="mr-2 h-4 w-4" /> Share
           </Button>
           <Button
-            className="bg-gradient-brand text-primary-foreground shadow-glow hover:opacity-95"
+            className="bg-gradient-brand text-primary-foreground shadow-elevated hover:opacity-95"
             disabled={downloading === "video"}
             onClick={() =>
               downloadExport(project.output_video_path, "video", `${project.title}.mp4`)
@@ -280,7 +280,7 @@ export function ResultsClient({
                   <Pencil className="mr-2 h-4 w-4" /> Edit
                 </Button>
                 <Button
-                  className="bg-gradient-brand text-primary-foreground shadow-glow hover:opacity-95"
+                  className="bg-gradient-brand text-primary-foreground shadow-elevated hover:opacity-95"
                   disabled={downloading === "video"}
                   onClick={() =>
                     downloadExport(project.output_video_path, "video", `${project.title}.mp4`)
@@ -340,7 +340,7 @@ export function ResultsClient({
                       {coverRegenerating ? "Regenerating…" : "Regenerate cover"}
                     </Button>
                     <Button
-                      className="bg-gradient-brand text-primary-foreground shadow-glow hover:opacity-95"
+                      className="bg-gradient-brand text-primary-foreground shadow-elevated hover:opacity-95"
                       disabled={downloading === "cover"}
                       onClick={() =>
                         downloadExport(project.cover_image_path, "cover", `${project.title}-cover.png`)
@@ -441,7 +441,7 @@ export function ResultsClient({
                       onClick={() => updateCaption(c)}
                       className={`rounded-full border px-3 py-1.5 text-sm transition ${
                         caption === c
-                          ? "border-transparent bg-gradient-brand text-primary-foreground shadow-glow"
+                          ? "border-transparent bg-gradient-brand text-primary-foreground shadow-elevated"
                           : "border-border/60 bg-background/40 text-muted-foreground hover:text-foreground"
                       }`}
                     >
@@ -466,7 +466,7 @@ export function ResultsClient({
           <Button variant="outline" asChild className="border-border/60 bg-background/40">
             <Link href="/dashboard">Back to dashboard</Link>
           </Button>
-          <Button asChild className="bg-gradient-brand text-primary-foreground shadow-glow hover:opacity-95">
+          <Button asChild className="bg-gradient-brand text-primary-foreground shadow-elevated hover:opacity-95">
             <Link href="/dashboard">Create another</Link>
           </Button>
         </div>

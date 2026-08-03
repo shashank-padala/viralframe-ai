@@ -79,7 +79,7 @@ export function Comparison() {
         </div>
         <h2 className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight md:text-5xl">
           They&apos;re built for volume.{" "}
-          <span className="font-display italic text-gradient-brand">
+          <span className="font-display italic text-highlight">
             This is built to be right the first time.
           </span>
         </h2>

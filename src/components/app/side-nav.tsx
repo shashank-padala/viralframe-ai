@@ -28,7 +28,7 @@ export function SideNav({ items, footer }: { items: NavItem[]; footer?: React.Re
   return (
     <aside className="sticky top-0 flex h-screen w-16 shrink-0 flex-col border-r border-border/60 bg-surface/30 lg:w-56">
       <Link href="/" className="flex h-16 items-center gap-2 px-4">
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-brand shadow-glow">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-brand shadow-elevated">
           <Sparkles className="h-4 w-4 text-primary-foreground" />
         </span>
         <span className="hidden text-[15px] font-semibold tracking-tight lg:inline">

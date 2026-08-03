@@ -15,6 +15,7 @@ import { Nav } from "@/components/site/nav";
 import { Footer } from "@/components/site/footer";
 import { Hero } from "@/components/site/hero";
 import { Comparison } from "@/components/site/comparison";
+import { TimeSaved } from "@/components/site/time-saved";
 
 export const metadata: Metadata = {
   title: "ViralFrame AI — Captions that get your accent right",
@@ -119,6 +120,8 @@ export default function Landing() {
         </div>
       </section>
 
+      <TimeSaved />
+
       <Comparison />
 
       {/* FEATURES */}
@@ -128,7 +131,7 @@ export default function Landing() {
         </div>
         <h2 className="mt-3 max-w-3xl text-4xl font-semibold tracking-tight md:text-5xl">
           Everything a careful editor would do —{" "}
-          <span className="font-display italic text-gradient-brand">
+          <span className="font-display italic text-highlight">
             without the twenty minutes.
           </span>
         </h2>
@@ -139,7 +142,7 @@ export default function Landing() {
               key={feature.title}
               className="group relative overflow-hidden rounded-2xl border border-border/60 bg-surface p-6 transition hover:border-brand/40"
             >
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-brand shadow-glow">
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-brand shadow-elevated">
                 <feature.icon className="h-5 w-5 text-primary-foreground" />
               </span>
               <div className="mt-5 text-lg font-semibold">{feature.title}</div>
@@ -153,11 +156,11 @@ export default function Landing() {
       {/* CTA */}
       <section className="mx-auto max-w-5xl px-6 pb-24">
         <div className="relative overflow-hidden rounded-3xl border border-border/60 bg-surface p-12 text-center shadow-card">
-          <div className="absolute inset-0 bg-hero-glow opacity-70" />
+          <div className="absolute inset-0 bg-hero-wash opacity-70" />
           <div className="relative">
             <h2 className="text-4xl font-semibold tracking-tight md:text-5xl">
               See what your last video{" "}
-              <span className="font-display italic text-gradient-brand">got wrong.</span>
+              <span className="font-display italic text-highlight">got wrong.</span>
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
               Upload one you&apos;ve already published. We&apos;ll show you every word the
@@ -165,7 +168,7 @@ export default function Landing() {
             </p>
             <Button
               size="lg"
-              className="mt-8 bg-gradient-brand text-primary-foreground shadow-glow hover:opacity-95"
+              className="mt-8 bg-gradient-brand text-primary-foreground shadow-elevated hover:opacity-95"
               asChild
             >
               <Link href="/dashboard">
