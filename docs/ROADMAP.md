@@ -10,6 +10,12 @@ assume earlier ones are solid.
 
 ## Caption product — where the work actually is
 
+**Vision:** raw footage in, publish-ready video out, edited as well as a
+professional would. **MVP:** captions for accented English speakers, and
+nothing else. See [PRODUCT.md](./PRODUCT.md) for why the gap between those
+two is deliberate — every other item in the vision is something CapCut
+already does well, so shipping one early just makes a worse CapCut.
+
 ### Done
 
 - [x] End-to-end CLI: video in → captioned video out at source resolution

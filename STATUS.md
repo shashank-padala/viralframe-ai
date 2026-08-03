@@ -1,9 +1,21 @@
 # Status
 
-_Last updated: 2026-08-02_
+_Last updated: 2026-08-03_
 
 Read this first in a new session. For the "why", see `docs/PRODUCT.md`,
 `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`.
+
+## Product framing (2026-08-03)
+
+**Vision:** raw footage in, publish-ready video out. **MVP wedge:** captions
+for accented, non-native English speakers — one thing, better than anyone
+else. Broad name, narrow tagline, narrow homepage. Do not build pause
+removal, b-roll, animation or screen splits until captions are
+unambiguously best-in-class; see `docs/PRODUCT.md`.
+
+The landing page, pricing and public copy are scoped to the caption wedge.
+The signed-in app (`/dashboard`, `/processing`, `/results`) still drives the
+old reel pipeline and still says so, because that code genuinely still runs.
 
 ## New this session: local captioning CLI (`scripts/caption/`)
 

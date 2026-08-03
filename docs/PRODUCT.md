@@ -1,10 +1,34 @@
 # Product Vision — ViralFrame AI
 
-> **Current direction (2026-08-02): captions for long-form video.**
-> Everything below the "Original direction" heading describes the
-> short-form reel product this repo started as. It is still the code that
-> `/dashboard` and `/results` drive, but it is no longer where the product
-> is going. Read this section first.
+> **Read this section first.** Everything below the "Original direction"
+> heading describes the short-form reel product this repo started as. It is
+> still the code `/dashboard` and `/results` drive, but it is no longer
+> where the product is going.
+
+## The long-term vision
+
+**Raw footage in, publish-ready video out** — edited as well as a
+professional would, in a fraction of the time. Captions, cut-downs, b-roll,
+animated explainers, screen splits: the user picks what they want and the
+system does it, or does all of it autonomously.
+
+That is the destination, and the name should survive it. It is **not** what
+gets built next.
+
+## The MVP wedge (2026-08-03)
+
+**Captions for accented, non-native English speakers.** One thing, done
+better than anyone else.
+
+The discipline that matters: everything else in the vision — pause removal,
+b-roll, animation, screen splits — is something CapCut and Opus already do
+well. Building any of it before captions are unambiguously best-in-class
+produces a worse CapCut. The vision earns the right to broaden only after
+the wedge is won.
+
+So: broad name, narrow tagline, narrow homepage. The tagline is scoped to
+captions and is expected to be rewritten the day that stops being the
+sharpest thing the product does.
 
 ## The pitch
 
