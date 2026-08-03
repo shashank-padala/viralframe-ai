@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import Link from "next/link";
+import { AppShell } from "@/components/app/app-shell";
 import { assertEditorEnabled, findEditDocuments, resolveAllowedPath } from "@/lib/editor/config";
 import type { EditDocument } from "../../../scripts/caption/edl";
 import { EditorClient } from "./editor-client";
@@ -7,7 +8,11 @@ import { EditorClient } from "./editor-client";
 export const dynamic = "force-dynamic";
 
 function Shell({ children }: { children: React.ReactNode }) {
-  return <main className="mx-auto max-w-3xl px-6 py-16">{children}</main>;
+  return (
+    <AppShell>
+      <main className="mx-auto max-w-3xl px-6 py-16">{children}</main>
+    </AppShell>
+  );
 }
 
 async function Picker() {
@@ -77,5 +82,9 @@ export default async function EditorPage({
     );
   }
 
-  return <EditorClient edlPath={edlPath} initialEdl={edl} />;
+  return (
+    <AppShell>
+      <EditorClient edlPath={edlPath} initialEdl={edl} />
+    </AppShell>
+  );
 }

@@ -15,6 +15,7 @@ import { transcribeLocalAudio } from "./lib/deepgram";
 import type { RichTranscript } from "./lib/transcript-types";
 import { correctTranscript } from "./plan/correct";
 import { groupIntoCards } from "./plan/group";
+import { formatMetadata, generateMetadata } from "./plan/metadata";
 import { buildCards } from "./plan/timing";
 import { assignHighlights } from "./plan/keywords";
 import { planPlacement } from "./placement";
@@ -62,6 +63,7 @@ interface Options {
   noVision: boolean;
   noLlm: boolean;
   noCorrect: boolean;
+  metadata: boolean;
   planOnly: boolean;
   engine: "ass" | "remotion";
 }
@@ -79,6 +81,7 @@ function parseArgs(argv: string[]): Options {
     noVision: false,
     noLlm: false,
     noCorrect: false,
+    metadata: false,
     planOnly: false,
     engine: "ass",
   };
@@ -122,6 +125,9 @@ function parseArgs(argv: string[]): Options {
         break;
       case "--no-correct":
         options.noCorrect = true;
+        break;
+      case "--metadata":
+        options.metadata = true;
         break;
       case "--plan-only":
         options.planOnly = true;
@@ -230,7 +236,26 @@ async function buildEdl(options: Options): Promise<EditDocument> {
   const highlighted = cards.filter((c) => c.words.some((w) => w.highlight)).length;
   log(`${highlighted} of ${cards.length} cards highlighted`);
 
-  const placement = await planPlacement(source, {
+  // Skipping the vision pass should skip a *cost*, not silently discard a
+  // placement decision that was already made and paid for. If a previous
+  // edit document exists, carry its placement forward rather than resetting
+  // to a default that may be worse.
+  let placement: EditDocument["placement"] | undefined;
+  if (options.noVision && !options.band) {
+    try {
+      const previous = JSON.parse(
+        await fsp.readFile(edlPath(options.input), "utf8")
+      ) as EditDocument;
+      if (previous.placement?.length) {
+        placement = previous.placement;
+        log(`--no-vision: keeping existing placement (${placement.map((p) => `${p.band}/${p.align ?? "center"}`).join(", ")})`);
+      }
+    } catch {
+      // No previous document; fall through to the default below.
+    }
+  }
+
+  placement ??= await planPlacement(source, {
     fixedBand: options.noVision ? "bottom" : options.band,
     onWarn: warn,
     onProgress: log,
@@ -278,6 +303,22 @@ async function main(): Promise<void> {
       : await getCorrectedTranscript(raw, edl.sourceHash, path.parse(options.input).name);
     await fsp.writeFile(srtPath, buildSrt(transcript.words));
     log(`wrote ${srtPath}`);
+
+    if (options.metadata) {
+      log("writing YouTube title and description");
+      const metaPath = path.join(
+        path.dirname(options.input),
+        `${path.parse(options.input).name}-youtube.txt`
+      );
+      try {
+        const meta = await generateMetadata(transcript.words, path.parse(options.input).name);
+        await fsp.writeFile(metaPath, formatMetadata(meta));
+        log(`wrote ${metaPath}`);
+      } catch (error) {
+        // Packaging copy is a bonus artifact; never fail a render over it.
+        warn(`metadata generation failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
   }
 
   if (options.planOnly) {

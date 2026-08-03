@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { Nav } from "@/components/site/nav";
+import { AppShell } from "@/components/app/app-shell";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardClient } from "./dashboard-client";
 
@@ -41,14 +41,13 @@ export default async function Dashboard() {
   const remaining = Math.max(0, 3 - (usedThisMonth ?? 0));
 
   return (
-    <div className="min-h-screen bg-background">
-      <Nav />
+    <AppShell>
       <DashboardClient
         userId={user.id}
         history={projects ?? []}
         remainingFreeVideos={remaining}
         plan={profile?.plan ?? "free"}
       />
-    </div>
+    </AppShell>
   );
 }

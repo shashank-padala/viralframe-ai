@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Upload, FileVideo, Film, Sparkles, Play, Plus, Loader2 } from "lucide-react";
+import { ArrowRight, FileVideo, Film, Loader2, Play, Plus, Sparkles, Type, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -145,6 +145,27 @@ export function DashboardClient({
           {remainingFreeVideos} free videos remaining this month
         </div>
       </div>
+
+      {/* The long-form caption flow starts at the CLI, not here, so without
+          a pointer it is undiscoverable from the UI entirely. */}
+      {process.env.NODE_ENV !== "production" && (
+        <Link
+          href="/editor"
+          className="mt-8 flex items-center gap-4 rounded-2xl border border-border/60 bg-surface/40 p-5 transition hover:border-brand/40"
+        >
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-brand shadow-glow">
+            <Type className="h-5 w-5 text-primary-foreground" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold">Long-form captions</span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">
+              Run <code className="rounded bg-muted px-1 py-0.5">scripts/caption/cli.ts</code> on a
+              video, then open its edit document here to fix the transcript and re-render.
+            </span>
+          </span>
+          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </Link>
+      )}
 
       <div className="mt-10 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         {/* Upload */}

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { Nav } from "@/components/site/nav";
+import { AppShell } from "@/components/app/app-shell";
 import { createClient } from "@/lib/supabase/server";
 import { ResultsClient } from "./results-client";
 
@@ -41,9 +41,8 @@ export default async function Results({
     .order("created_at", { ascending: true });
 
   return (
-    <div className="min-h-screen bg-background">
-      <Nav />
+    <AppShell>
       <ResultsClient project={project} variations={variations ?? []} />
-    </div>
+    </AppShell>
   );
 }

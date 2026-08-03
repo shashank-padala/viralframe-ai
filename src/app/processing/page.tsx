@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { Nav } from "@/components/site/nav";
+import { AppShell } from "@/components/app/app-shell";
 import { createClient } from "@/lib/supabase/server";
 import { ProcessingClient } from "./processing-client";
 
@@ -35,14 +35,13 @@ export default async function Processing({
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Nav />
+    <AppShell>
       <ProcessingClient
         projectId={project.id}
         title={project.title}
         initialStage={project.pipeline_stage}
         initialError={project.error_message}
       />
-    </div>
+    </AppShell>
   );
 }
