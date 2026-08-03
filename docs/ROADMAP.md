@@ -3,6 +3,56 @@
 Ordered by dependency, not necessarily by calendar priority — later phases
 assume earlier ones are solid.
 
+> **Phases 0–3 below are the short-form reel product.** As of 2026-08-02 the
+> product direction is long-form captions (see [PRODUCT.md](./PRODUCT.md)),
+> so treat them as history plus a list of things that will probably never be
+> finished. The live roadmap is the section immediately below.
+
+## Caption product — where the work actually is
+
+### Done
+
+- [x] End-to-end CLI: video in → captioned video out at source resolution
+      and frame rate, plus `.srt` and YouTube packaging copy.
+- [x] Edit document (`scripts/caption/edl.ts`) as the single intermediate,
+      with the source→output time remap isolated in `timeline.ts` so pause
+      removal stays tractable.
+- [x] Context-aware name/term correction with a consistency sweep.
+- [x] DP-based card grouping (dangling cards 10.2% → 5.4% on a real
+      transcript).
+- [x] Layout-aware 3×3 zone placement from a vision pass.
+- [x] Two render engines; libass default at 0.58× playtime vs Remotion's
+      8.9×.
+- [x] `/editor` — transcript correction, find-and-replace, zone picker,
+      re-render.
+
+### Next, in order
+
+1. **Validate before building more.** Put up the diff view — upload a
+    video, see side by side what a normal transcriber produced versus what
+    the correction pass fixed. It is one ASR call and it is the entire
+    sales pitch. Show it to twenty people in the target segment.
+2. **Per-user glossary that learns from edits.** Every correction made in
+    `/editor` becomes a rule for that user's next video. This is the moat;
+    everything else is copyable.
+3. **Prime the recogniser** — Deepgram keyword boosting / Whisper initial
+    prompt from that glossary, so errors are prevented rather than repaired.
+4. **Use the confidence scores we already store** to target the correction
+    pass at words the recogniser itself flagged as uncertain.
+5. **Chunked parallel encode** — split, encode in parallel, concat. The
+    single biggest speed lever, engine-agnostic, no GPU needed.
+6. Reconcile the Remotion preview with the libass export (the preview sits
+    ~10% of frame height higher, so what you see is not what you get).
+7. Only then: pause removal, b-roll, animated explainers.
+
+### Known dead weight
+
+`projects.style` is read by nothing; `projects.platform` only draws a chip
+on `/results`. Both are reel leftovers. Remove them when the caption
+pipeline is ported into the hosted GitHub Actions workflow.
+
+---
+
 ## Phase 0 — UI + backend scaffold (done)
 
 - [x] Port all 6 mock screens (landing, pricing, login, dashboard,

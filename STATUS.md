@@ -28,8 +28,19 @@ today because V1 keeps the whole video.
 
 Stages: probe/hash → Deepgram (cached per source hash) → **name/term
 correction** → deterministic card grouping → timing hygiene → highlight
-marking → per-segment placement → Remotion render (silent) → ffmpeg mux of
-the untouched source audio.
+marking → per-segment placement → burn-in → mux of the untouched source
+audio. `--metadata` additionally writes `<name>-youtube.txt` (title
+options, hook, and a single copy-paste description block containing
+chapters and hashtags), generated from the *corrected* transcript.
+
+Flags: `--range a:b`, `--style`, `--band`, `--engine ass|remotion`,
+`--from-edl`, `--metadata`, `--plan-only`, `--no-vision`, `--no-llm`,
+`--no-correct`.
+
+Note `--no-vision` carries forward the previous document's placement rather
+than resetting to a default — skipping a *cost* should not silently discard
+a *decision* that was already made and paid for. This bit twice before it
+was fixed.
 
 ### Correction pass (`scripts/caption/plan/correct.ts`)
 
@@ -162,6 +173,11 @@ pipeline and were left alone deliberately — see "Dead UI" below.
 Play the video, click any word to jump there, correct it, adjust style and
 placement, re-render — all against the same edit document the CLI writes.
 
+- Reachable from the app's side nav (an icon rail in
+  `src/components/app/app-shell.tsx`, shared by `/dashboard`,
+  `/processing`, `/results` and `/editor`). The Captions entry and the
+  dashboard pointer card both render **only outside production**, since the
+  route throws there.
 - `/editor` with no query lists every `.edl.json` found under the allowed
   roots; `/editor?file=<path>` opens one.
 - **Controls that reach the renderer, and nothing else**: caption style
