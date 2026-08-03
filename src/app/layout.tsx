@@ -1,35 +1,42 @@
 import type { Metadata } from "next";
-import { Inter, Instrument_Serif } from "next/font/google";
+import { Space_Grotesk, IBM_Plex_Sans, JetBrains_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+// Three faces, each with a job: Space Grotesk for headlines and caption
+// cards, IBM Plex Sans for reading, JetBrains Mono for the data -- error
+// ledgers, timecodes, calculator rows. The mono is doing real work here,
+// not decoration: it makes the transcription errors read as records.
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["500", "600", "700"],
 });
 
-const instrumentSerif = Instrument_Serif({
-  variable: "--font-instrument-serif",
+const plexSans = IBM_Plex_Sans({
+  variable: "--font-plex-sans",
   subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
+  weight: ["400", "500", "600"],
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-jetbrains-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
-  title: "ViralFrame AI — Turn any video into a viral-ready reel",
+  title: "ViralFrame — Captions that get accented English right",
   description:
-    "Upload your talking video. ViralFrame AI adds B-roll, hooks, captions, and a creator-style layout automatically. Reels, TikToks and Shorts in 60 seconds.",
+    "Captions for long-form landscape video that fix misheard names in context before you see them. Built for creators who speak accented, non-native English.",
   openGraph: {
-    title: "ViralFrame AI — Reels that edit themselves",
+    title: "ViralFrame — Captions that get accented English right",
     description:
-      "AI transforms your raw talking-head video into a polished short-form reel.",
+      "Captions for long-form landscape video that fix misheard names in context before you see them.",
     type: "website",
   },
-  twitter: {
-    card: "summary_large_image",
-  },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({
@@ -40,7 +47,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`dark ${inter.variable} ${instrumentSerif.variable} antialiased`}
+      className={`dark ${spaceGrotesk.variable} ${plexSans.variable} ${jetbrainsMono.variable} antialiased`}
     >
       <body>
         {children}

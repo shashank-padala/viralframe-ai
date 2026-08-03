@@ -4,196 +4,137 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ---------------------------------------------------------------------------
+   Design system — "cutting room dark"
+   ---------------------------------------------------------------------------
+   Ported from the clear-captions prototype. Warm near-black (hue ~75) rather
+   than a neutral or violet-tinted grey, paper-white type, and a single amber
+   signal accent. The warmth is the point: it reads like a graded edit suite
+   rather than a generic dark SaaS shell.
+
+   `:root` IS the theme -- there is no light mode. `<html>` carries `dark`
+   only so shadcn's `dark:` variants resolve.
+
+   Domain tokens (--wrong / --right) are load-bearing, not decorative: the
+   landing page shows real transcription errors being corrected, and those two
+   colours are what carry the meaning.
+   --------------------------------------------------------------------------- */
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  /* These must reference the CSS variables next/font generates in
-     layout.tsx, not the literal family names. Naming "Inter" and
-     "Instrument Serif" directly does not resolve to the self-hosted faces,
-     so every `font-display` headline was silently falling back to Georgia. */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, "SFMono-Regular", monospace;
-  --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
-  --font-heading: var(--font-sans);
-  --color-brand: var(--brand-ink);
-  --color-highlight: var(--highlight);
-  --color-brand-2: var(--brand-2);
-  --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-wrong: var(--wrong);
+  --color-wrong-soft: var(--wrong-soft);
+  --color-right: var(--right);
+  --color-right-soft: var(--right-soft);
+
+  /* Aliases so the signed-in app, written against the previous palette,
+     keeps resolving without a call-site sweep. */
+  --color-brand: var(--primary);
+  --color-surface: var(--card);
+  --color-surface-2: var(--secondary);
+
+  /* Point at the variables next/font generates in layout.tsx. Naming the
+     families literally would not resolve to the self-hosted faces. */
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
 }
 
-/* ---------------------------------------------------------------------------
-   Palette
-   ---------------------------------------------------------------------------
-   Neutral by default -- every grey is true zero-chroma, so nothing carries a
-   hidden colour cast. The only saturated colour in the system is the caption
-   highlight, the same #FFD400 the renderer burns into the video. Using it as
-   the sole accent means the brand colour is something the product actually
-   does, rather than decoration.
-
-   Two inks are kept apart deliberately:
-     --highlight  the yellow, only ever used as a *fill* behind or around
-                  content. Yellow text on white fails contrast badly.
-     --brand-ink  what `text-brand` resolves to: near-black on light, the
-                  yellow on dark, so accented text is always readable.
-
-   Light is the default and is what the marketing pages use. Dark is applied
-   by AppShell to the signed-in app, because judging video against bright
-   chrome is genuinely harder -- every editor ships dark for that reason.
-   --------------------------------------------------------------------------- */
-
 :root {
-  --radius: 0.75rem;
+  --radius: 0.5rem;
 
-  --background: oklch(0.995 0 0);
-  --foreground: oklch(0.17 0 0);
+  --background: oklch(0.16 0.008 75);
+  --foreground: oklch(0.955 0.008 85);
+  --card: oklch(0.204 0.009 75);
+  --card-foreground: oklch(0.955 0.008 85);
+  --popover: oklch(0.204 0.009 75);
+  --popover-foreground: oklch(0.955 0.008 85);
+  --primary: oklch(0.83 0.17 85);
+  --primary-foreground: oklch(0.18 0.02 75);
+  --secondary: oklch(0.26 0.01 75);
+  --secondary-foreground: oklch(0.955 0.008 85);
+  --muted: oklch(0.24 0.009 75);
+  --muted-foreground: oklch(0.7 0.012 80);
+  --accent: oklch(0.26 0.012 75);
+  --accent-foreground: oklch(0.955 0.008 85);
+  --destructive: oklch(0.62 0.2 25);
+  --destructive-foreground: oklch(0.97 0.01 85);
+  --border: oklch(0.3 0.01 75);
+  --input: oklch(0.3 0.01 75);
+  --ring: oklch(0.83 0.17 85);
 
-  --surface: oklch(0.975 0 0);
-  --surface-2: oklch(0.945 0 0);
+  --chart-1: oklch(0.83 0.17 85);
+  --chart-2: oklch(0.75 0.16 155);
+  --chart-3: oklch(0.62 0.2 25);
+  --chart-4: oklch(0.7 0.012 80);
+  --chart-5: oklch(0.55 0.09 220);
 
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.17 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.17 0 0);
+  --sidebar: oklch(0.18 0.008 75);
+  --sidebar-foreground: oklch(0.955 0.008 85);
+  --sidebar-primary: oklch(0.83 0.17 85);
+  --sidebar-primary-foreground: oklch(0.18 0.02 75);
+  --sidebar-accent: oklch(0.26 0.012 75);
+  --sidebar-accent-foreground: oklch(0.955 0.008 85);
+  --sidebar-border: oklch(0.3 0.01 75);
+  --sidebar-ring: oklch(0.83 0.17 85);
 
-  /* Primary is ink, not colour: near-black buttons with white type. */
-  --primary: oklch(0.17 0 0);
-  --primary-foreground: oklch(0.99 0 0);
+  /* Domain tokens */
+  --wrong: oklch(0.66 0.19 28);
+  --wrong-soft: oklch(0.66 0.19 28 / 0.14);
+  --right: oklch(0.79 0.16 158);
+  --right-soft: oklch(0.79 0.16 158 / 0.14);
+  --paper: oklch(0.955 0.008 85);
+  --grid-line: oklch(1 0 0 / 0.05);
 
-  --highlight: oklch(0.87 0.176 96);        /* #FFD400 */
-  --highlight-swipe: oklch(0.87 0.176 96);  /* opaque marker on light */
-  --brand-ink: oklch(0.17 0 0);
-  --brand-2: oklch(0.87 0.176 96);
-
-  --secondary: oklch(0.96 0 0);
-  --secondary-foreground: oklch(0.17 0 0);
-  --muted: oklch(0.96 0 0);
-  --muted-foreground: oklch(0.47 0 0);
-  --accent: oklch(0.955 0 0);
-  --accent-foreground: oklch(0.17 0 0);
-  --destructive: oklch(0.58 0.2 25);
-  --destructive-foreground: oklch(0.99 0 0);
-
-  --border: oklch(0 0 0 / 10%);
-  --input: oklch(0 0 0 / 14%);
-  --ring: oklch(0.17 0 0 / 30%);
-  --grid-line: oklch(0 0 0 / 0.04);
-
-  --chart-1: oklch(0.87 0.176 96);
-  --chart-2: oklch(0.17 0 0);
-  --chart-3: oklch(0.55 0 0);
-  --chart-4: oklch(0.72 0 0);
-  --chart-5: oklch(0.86 0 0);
-
-  --sidebar: oklch(0.975 0 0);
-  --sidebar-foreground: oklch(0.17 0 0);
-  --sidebar-primary: oklch(0.17 0 0);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.945 0 0);
-  --sidebar-accent-foreground: oklch(0.17 0 0);
-  --sidebar-border: oklch(0 0 0 / 10%);
-  --sidebar-ring: oklch(0.17 0 0 / 30%);
-
-  /* A whisper, not a wash. The old hero gradient was three saturated radial
-     lights; this is barely perceptible and exists only to stop large flat
-     areas feeling dead. */
-  --gradient-hero: radial-gradient(1100px 520px at 15% -10%, oklch(0.87 0.176 96 / 0.10), transparent 62%),
-                   radial-gradient(900px 480px at 88% 4%, oklch(0.17 0 0 / 0.04), transparent 60%);
-  --gradient-primary: linear-gradient(180deg, oklch(0.22 0 0) 0%, oklch(0.15 0 0) 100%);
-
-  --shadow-elevated: 0 1px 2px oklch(0 0 0 / 0.05), 0 10px 30px -12px oklch(0 0 0 / 0.16);
-  --shadow-card: 0 1px 3px oklch(0 0 0 / 0.06), 0 18px 48px -24px oklch(0 0 0 / 0.22);
+  --shadow-card: 0 1px 0 oklch(1 0 0 / 0.04) inset, 0 24px 60px -30px oklch(0 0 0 / 0.85);
+  --shadow-elevated: 0 1px 0 oklch(1 0 0 / 0.04) inset, 0 12px 32px -18px oklch(0 0 0 / 0.8);
 }
 
 .dark {
   color-scheme: dark;
-
-  --background: oklch(0.155 0 0);
-  --foreground: oklch(0.97 0 0);
-
-  --surface: oklch(0.195 0 0);
-  --surface-2: oklch(0.235 0 0);
-
-  --card: oklch(0.195 0 0);
-  --card-foreground: oklch(0.97 0 0);
-  --popover: oklch(0.195 0 0);
-  --popover-foreground: oklch(0.97 0 0);
-
-  --primary: oklch(0.97 0 0);
-  --primary-foreground: oklch(0.155 0 0);
-
-  --highlight: oklch(0.87 0.176 96);
-  /* Translucent on dark so a marker swipe sits *behind* light type instead
-     of fighting it. */
-  --highlight-swipe: oklch(0.87 0.176 96 / 0.32);
-  --brand-ink: oklch(0.87 0.176 96);
-  --brand-2: oklch(0.87 0.176 96);
-
-  --secondary: oklch(0.24 0 0);
-  --secondary-foreground: oklch(0.97 0 0);
-  --muted: oklch(0.24 0 0);
-  --muted-foreground: oklch(0.66 0 0);
-  --accent: oklch(0.26 0 0);
-  --accent-foreground: oklch(0.97 0 0);
-  --destructive: oklch(0.62 0.2 25);
-  --destructive-foreground: oklch(0.97 0 0);
-
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 14%);
-  --ring: oklch(0.97 0 0 / 30%);
-  --grid-line: oklch(1 0 0 / 0.04);
-
-  --sidebar: oklch(0.175 0 0);
-  --sidebar-foreground: oklch(0.97 0 0);
-  --sidebar-primary: oklch(0.97 0 0);
-  --sidebar-primary-foreground: oklch(0.155 0 0);
-  --sidebar-accent: oklch(0.24 0 0);
-  --sidebar-accent-foreground: oklch(0.97 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.97 0 0 / 30%);
-
-  --gradient-hero: radial-gradient(1100px 520px at 15% -10%, oklch(0.87 0.176 96 / 0.08), transparent 62%),
-                   radial-gradient(900px 480px at 88% 4%, oklch(1 0 0 / 0.03), transparent 60%);
-  --gradient-primary: linear-gradient(180deg, oklch(1 0 0) 0%, oklch(0.93 0 0) 100%);
-
-  --shadow-elevated: 0 1px 2px oklch(0 0 0 / 0.5), 0 12px 32px -14px oklch(0 0 0 / 0.7);
-  --shadow-card: 0 1px 3px oklch(0 0 0 / 0.5), 0 20px 56px -28px oklch(0 0 0 / 0.8);
 }
 
 @layer base {
@@ -206,50 +147,23 @@
     -webkit-font-smoothing: antialiased;
   }
   html {
-    @apply font-sans;
+    font-family: var(--font-body);
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
   }
 }
 
-/* Buttons and icon tiles. A near-imperceptible vertical gradient of the
-   primary ink rather than the old violet->amber sweep: still a considered
-   surface, but it no longer competes with the content. */
-@utility bg-gradient-brand {
-  background-image: var(--gradient-primary);
-}
-@utility bg-hero-wash {
-  background-image: var(--gradient-hero);
+@utility grid-bg {
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 64px 64px;
 }
 
-/* Emphasised clause in a headline.
-   An earlier version filled the text background with the caption yellow.
-   That colour is earned inside the video -- on footage, behind a black
-   stroke -- but as a block behind text on a near-white page it reads cheap
-   and muddies the type. So on the page it is demoted to a fine rule sitting
-   under the baseline: still the product's colour, still a deliberate mark,
-   but the typography carries the emphasis rather than the fill. */
-@utility text-highlight {
-  background-image: linear-gradient(to bottom, var(--highlight) 0 100%);
-  background-repeat: no-repeat;
-  background-size: 100% 0.09em;
-  background-position: 0 calc(100% - 0.06em);
-  padding-bottom: 0.04em;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
-}
-
-@utility shadow-elevated {
-  box-shadow: var(--shadow-elevated);
-}
-@utility shadow-card {
-  box-shadow: var(--shadow-card);
-}
-@utility font-display {
-  font-family: var(--font-display);
-  font-weight: 400;
-  letter-spacing: -0.02em;
-}
-
-/* Subtle grid backdrop -- line colour follows the theme. */
 @utility bg-grid {
   background-image:
     linear-gradient(var(--grid-line) 1px, transparent 1px),
@@ -257,42 +171,67 @@
   background-size: 44px 44px;
 }
 
-@keyframes brand-shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-@utility animate-shimmer {
-  background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.08), transparent);
-  background-size: 200% 100%;
-  animation: brand-shimmer 2s infinite;
+@utility caption-card {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 14px oklch(0 0 0 / 0.75);
 }
 
-@keyframes float-slow {
-  0%, 100% { transform: translateY(0) }
-  50% { transform: translateY(-10px) }
+@utility shadow-card {
+  box-shadow: var(--shadow-card);
 }
-@utility animate-float {
-  animation: float-slow 6s ease-in-out infinite;
+@utility shadow-elevated {
+  box-shadow: var(--shadow-elevated);
 }
-/* The corrected word landing in the hero caption card. Slight overshoot in
-   scale plus a short rise reads as the word "snapping" into place, which is
-   what makes the correction feel decisive rather than like a crossfade. */
-@keyframes word-in {
-  0%   { transform: translateY(0.14em) scale(0.9); opacity: 0; filter: blur(3px); }
-  60%  { transform: translateY(0) scale(1.04); opacity: 1; filter: blur(0); }
-  100% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0); }
-}
-@utility animate-word-in {
-  animation: word-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+@utility font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
 }
 
-/* Belt and braces: components already branch on prefers-reduced-motion in
-   JS, but any decorative animation added later should stop here too rather
-   than needing to remember. */
+/* Aliases for the signed-in app, so its existing markup keeps working
+   against the new palette rather than needing a 100-call-site sweep. */
+@utility bg-gradient-brand {
+  background-color: var(--primary);
+}
+@utility bg-hero-wash {
+  background-image: radial-gradient(
+    1100px 520px at 15% -10%,
+    oklch(0.83 0.17 85 / 0.1),
+    transparent 62%
+  );
+}
+@utility text-highlight {
+  color: var(--primary);
+}
+
+@keyframes swap-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.35em);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes strike {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-float,
-  .animate-shimmer,
-  .animate-word-in {
-    animation: none !important;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
   }
 }
