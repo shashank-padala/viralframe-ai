@@ -9,7 +9,9 @@ export function Footer() {
             <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
           </span>
           <span className="font-medium">ViralFrame AI</span>
-          <span className="text-muted-foreground">— Reels that edit themselves.</span>
+          <span className="text-muted-foreground">
+            — Captions that get your accent right.
+          </span>
         </div>
         <div className="flex gap-6 text-xs text-muted-foreground">
           <span>© 2026</span>

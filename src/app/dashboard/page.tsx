@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DashboardClient } from "./dashboard-client";
 
 export const metadata: Metadata = {
-  title: "Dashboard — ViralFrame AI",
+  title: "Dashboard — ViralFrame",
 };
 
 export default async function Dashboard() {

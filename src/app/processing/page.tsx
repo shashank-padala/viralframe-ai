@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ProcessingClient } from "./processing-client";
 
 export const metadata: Metadata = {
-  title: "Creating your reel — ViralFrame AI",
+  title: "Processing your video — ViralFrame",
 };
 
 export default async function Processing({

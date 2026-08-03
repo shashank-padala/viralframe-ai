@@ -6,7 +6,7 @@ import { LoginForm } from "./login-form";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "Sign in — ViralFrame AI",
+  title: "Sign in — ViralFrame",
 };
 
 export default async function Login({

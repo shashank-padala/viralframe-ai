@@ -22,7 +22,7 @@ export async function Nav() {
           </span>
         </Link>
         <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
-          <Link href="/#examples" className="hover:text-foreground">Examples</Link>
+          <Link href="/#comparison" className="hover:text-foreground">Why us</Link>
           <Link href="/pricing" className="hover:text-foreground">Pricing</Link>
           <Link href="/dashboard" className="hover:text-foreground">Dashboard</Link>
         </nav>

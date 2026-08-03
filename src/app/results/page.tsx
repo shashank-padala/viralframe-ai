@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ResultsClient } from "./results-client";
 
 export const metadata: Metadata = {
-  title: "Your reel is ready — ViralFrame AI",
+  title: "Your video is ready — ViralFrame",
 };
 
 export default async function Results({
