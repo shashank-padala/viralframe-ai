@@ -1,5 +1,4 @@
 import { LogOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { signOutAction } from "@/lib/supabase/actions";
 import { SideNav, type NavItem } from "./side-nav";
@@ -30,17 +29,25 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         items={items}
         footer={
           user ? (
-            <div className="flex items-center gap-2">
-              <span
-                className="hidden min-w-0 flex-1 truncate px-2 text-xs text-muted-foreground lg:inline"
+            <div className="space-y-1">
+              <div
+                className="hidden truncate px-3 pb-1 pt-1 text-[11px] text-muted-foreground lg:block"
                 title={user.email}
               >
                 {user.email}
-              </span>
+              </div>
               <form action={signOutAction}>
-                <Button variant="ghost" size="sm" type="submit" title="Sign out">
-                  <LogOut className="h-4 w-4" />
-                </Button>
+                {/* Styled to match the nav items above rather than as a
+                    button, so the rail reads as one list and the collapsed
+                    state stays icon-aligned. */}
+                <button
+                  type="submit"
+                  title="Sign out"
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-surface/60 hover:text-foreground"
+                >
+                  <LogOut className="h-4 w-4 shrink-0" />
+                  <span className="hidden lg:inline">Sign out</span>
+                </button>
               </form>
             </div>
           ) : null

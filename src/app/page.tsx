@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   ArrowRight,
   Check,
@@ -16,6 +17,7 @@ import { Footer } from "@/components/site/footer";
 import { Hero } from "@/components/site/hero";
 import { Comparison } from "@/components/site/comparison";
 import { TimeSaved } from "@/components/site/time-saved";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "ViralFrame AI — Captions that get your accent right",
@@ -86,7 +88,16 @@ const FEATURES = [
   },
 ];
 
-export default function Landing() {
+export default async function Landing() {
+  // Someone already signed in has no use for the pitch. Sign-out sends them
+  // back to "/", which renders normally once the session is gone, so this
+  // cannot loop.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) redirect("/dashboard");
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Nav />

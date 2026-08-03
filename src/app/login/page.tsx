@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Sparkles } from "lucide-react";
 import { LoginForm } from "./login-form";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "Sign in — ViralFrame AI",
@@ -13,6 +15,12 @@ export default async function Login({
   searchParams: Promise<{ redirectTo?: string }>;
 }) {
   const { redirectTo } = await searchParams;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) redirect(redirectTo ?? "/dashboard");
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-background px-4">
@@ -26,11 +34,10 @@ export default async function Login({
           <span className="text-sm font-semibold tracking-tight">ViralFrame AI</span>
         </Link>
         <h1 className="mt-8 text-3xl font-semibold tracking-tight">
-          Welcome back.{" "}
-          <span className="font-display italic text-highlight">Let&apos;s ship.</span>
+          Welcome back.
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Sign in to generate your next viral reel.
+          Sign in to caption your next video.
         </p>
 
         <LoginForm redirectTo={redirectTo ?? "/dashboard"} />
