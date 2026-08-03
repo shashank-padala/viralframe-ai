@@ -126,7 +126,7 @@ export function PricingPlans() {
           return (
             <div
               key={tier.name}
-              className={`relative overflow-hidden rounded-xl border p-7 ${
+              className={`relative flex flex-col overflow-hidden rounded-xl border p-7 ${
                 tier.highlight
                   ? "border-primary/50 bg-card shadow-[var(--shadow-card)]"
                   : "border-border bg-card/40"
@@ -162,7 +162,7 @@ export function PricingPlans() {
                 )}
               </p>
 
-              <ul className="mt-7 space-y-3 text-sm">
+              <ul className="mt-7 flex-1 space-y-3 text-sm">
                 {tier.features.map((f) => (
                   <li key={f} className="flex items-start gap-2">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
