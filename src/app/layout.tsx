@@ -40,7 +40,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${instrumentSerif.variable} antialiased`}
+      className={`dark ${inter.variable} ${instrumentSerif.variable} antialiased`}
     >
       <body>
         {children}

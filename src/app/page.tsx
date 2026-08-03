@@ -34,22 +34,22 @@ const STEPS = [
   {
     n: "01",
     title: "Upload your video",
-    body: "Any length, any resolution. Landscape long-form is what this is built for.",
+    body: "Any length, any resolution.",
   },
   {
     n: "02",
     title: "We fix it in context",
-    body: "The whole transcript is read as one piece, so names and terms get corrected the way a human would — by understanding the sentence around them.",
+    body: "The whole transcript is read as one piece, so names get corrected the way a human would.",
   },
   {
     n: "03",
     title: "You check what's left",
-    body: "Click any word to jump to that moment and fix it. Find-and-replace handles anything recurring.",
+    body: "Click any word to jump there. Find-and-replace handles anything recurring.",
   },
   {
     n: "04",
     title: "Export everything",
-    body: "Captioned video at your source resolution, a subtitle file, and a YouTube title and description.",
+    body: "Captioned video, subtitle file, and YouTube copy.",
   },
 ];
 
@@ -93,33 +93,6 @@ export default function Landing() {
 
       <Hero />
 
-      {/* HOW IT WORKS */}
-      <section className="mx-auto max-w-7xl px-6 py-24">
-        <div className="text-xs font-semibold uppercase tracking-widest text-brand">
-          How it works
-        </div>
-        <h2 className="mt-3 max-w-2xl text-4xl font-semibold tracking-tight md:text-5xl">
-          Four steps.{" "}
-          <span className="font-display italic text-muted-foreground">
-            Only one of them is yours.
-          </span>
-        </h2>
-
-        <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {STEPS.map((step) => (
-            <div
-              key={step.n}
-              className="group relative overflow-hidden rounded-2xl border border-border/60 bg-surface p-6 transition hover:border-brand/40"
-            >
-              <div className="text-xs font-semibold tracking-widest text-brand">{step.n}</div>
-              <div className="mt-4 text-lg font-semibold">{step.title}</div>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.body}</p>
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-brand opacity-0 transition group-hover:opacity-100" />
-            </div>
-          ))}
-        </div>
-      </section>
-
       <TimeSaved />
 
       <Comparison />
@@ -150,6 +123,34 @@ export default function Landing() {
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-brand opacity-0 transition group-hover:opacity-100" />
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* HOW IT WORKS — deliberately last and deliberately small. Three of
+          these four steps are self-evident; only the correction step is
+          interesting, and the hero and comparison already argue that far
+          better. This is orientation for someone already convinced, so it
+          gets a strip rather than a section. */}
+      <section className="mx-auto max-w-7xl px-6 pb-8">
+        <div className="rounded-2xl border border-border/60 bg-surface/40 p-8">
+          <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Start to finish
+          </div>
+          <ol className="mt-6 grid gap-6 md:grid-cols-4">
+            {STEPS.map((step) => (
+              <li key={step.n} className="flex gap-3">
+                <span className="font-mono text-xs tabular-nums text-muted-foreground">
+                  {step.n}
+                </span>
+                <span>
+                  <span className="block text-sm font-medium">{step.title}</span>
+                  <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                    {step.body}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
