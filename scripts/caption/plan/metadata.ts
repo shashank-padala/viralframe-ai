@@ -17,6 +17,9 @@ export interface VideoMetadata {
   hook: string;
   description: string;
   chapters: { timeSec: number; label: string }[];
+  /** Go inline in the description; YouTube surfaces the first three above the title. */
+  hashtags: string[];
+  /** The separate Tags field in YouTube Studio, not part of the description. */
   tags: string[];
 }
 
@@ -74,6 +77,9 @@ export async function generateMetadata(
             "",
             "Chapters: 5-10, using the [m:ss] markers in the transcript. The first must be 0.",
             "",
+            "Hashtags: 4-8, no spaces, most important first -- YouTube shows the first three",
+            "above the title. Relevant to the actual content, not generic reach-bait.",
+            "",
             "Tags: 10-15 lowercase search phrases people would actually type.",
           ].join("\n"),
         },
@@ -90,7 +96,7 @@ export async function generateMetadata(
           schema: {
             type: "object",
             additionalProperties: false,
-            required: ["titles", "hook", "description", "chapters", "tags"],
+            required: ["titles", "hook", "description", "chapters", "hashtags", "tags"],
             properties: {
               titles: {
                 type: "array",
@@ -112,6 +118,7 @@ export async function generateMetadata(
                   properties: { timeSec: { type: "number" }, label: { type: "string" } },
                 },
               },
+              hashtags: { type: "array", items: { type: "string" } },
               tags: { type: "array", items: { type: "string" } },
             },
           },
@@ -133,28 +140,53 @@ function stamp(seconds: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-/** Plain text, laid out to be copy-pasted straight into YouTube Studio. */
+/**
+ * Plain text for YouTube Studio.
+ *
+ * The description, chapters and hashtags are emitted as one contiguous
+ * block between two markers, because that is how it gets used: select
+ * once, paste once. Splitting them under separate headings means three
+ * copies and a chance to paste them in the wrong order — chapters only work
+ * when they sit inside the description itself.
+ *
+ * Titles and tags stay outside the block: they are different fields in
+ * YouTube Studio, and only one title gets chosen.
+ */
 export function formatMetadata(meta: VideoMetadata): string {
   const lines: string[] = [];
 
-  lines.push("TITLE OPTIONS", "=".repeat(60), "");
+  lines.push("PICK A TITLE", "");
   meta.titles.forEach((t, i) => {
-    lines.push(`${i + 1}. ${t.title}`);
-    lines.push(`   (${t.angle} · ${t.title.length} chars)`);
-    lines.push("");
+    lines.push(`${i + 1}. ${t.title}   —  ${t.angle}, ${t.title.length} chars`);
   });
 
-  lines.push("", "HOOK", "=".repeat(60), "", meta.hook, "");
-  lines.push("", "DESCRIPTION", "=".repeat(60), "", meta.description, "");
+  lines.push("", `PINNED COMMENT / SPOKEN HOOK`, "", meta.hook, "");
+
+  lines.push(
+    "",
+    "─".repeat(64),
+    "COPY EVERYTHING BELOW THIS LINE INTO THE DESCRIPTION",
+    "─".repeat(64),
+    "",
+    meta.description.trim(),
+    ""
+  );
 
   if (meta.chapters.length > 0) {
-    lines.push("", "CHAPTERS (paste at the end of the description)", "=".repeat(60), "");
-    // YouTube only accepts chapters when the first is exactly 0:00.
+    lines.push("Chapters:");
+    // YouTube only recognises chapters when the first one is exactly 0:00.
     const chapters = [...meta.chapters].sort((a, b) => a.timeSec - b.timeSec);
     chapters.forEach((c, i) => lines.push(`${i === 0 ? "0:00" : stamp(c.timeSec)} ${c.label}`));
     lines.push("");
   }
 
-  lines.push("", "TAGS", "=".repeat(60), "", meta.tags.join(", "), "");
+  if (meta.hashtags.length > 0) {
+    const hashtags = meta.hashtags.map((h) => (h.startsWith("#") ? h : `#${h.replace(/\s+/g, "")}`));
+    lines.push(hashtags.join(" "), "");
+  }
+
+  lines.push("─".repeat(64), "END OF DESCRIPTION", "─".repeat(64), "");
+  lines.push("", "TAGS  (separate field in YouTube Studio, not the description)", "", meta.tags.join(", "), "");
+
   return lines.join("\n");
 }
