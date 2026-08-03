@@ -1,10 +1,9 @@
-import http from "node:http";
 import path from "node:path";
 import os from "node:os";
 import fs from "node:fs/promises";
 import { bundle } from "@remotion/bundler";
 import { renderMedia, selectComposition } from "@remotion/renderer";
-import serveHandler from "serve-handler";
+import { serveLocalDir } from "../lib/assetServer";
 import type { ReelCompositionProps } from "../../../remotion/ReelComposition";
 
 const COMPOSITION_ID = "Reel";
@@ -18,25 +17,6 @@ export type RenderInputProps = Pick<
   ReelCompositionProps,
   "brollClips" | "words" | "hook" | "layout" | "captionStyle" | "durationInSeconds" | "aspectRatio"
 >;
-
-async function serveLocalDir(dir: string): Promise<{ port: number; close: () => Promise<void> }> {
-  const server = http.createServer((req, res) => serveHandler(req, res, { public: dir }));
-  await new Promise<void>((resolve, reject) => {
-    server.once("error", reject);
-    server.listen(0, "127.0.0.1", resolve);
-  });
-  const address = server.address();
-  if (!address || typeof address === "string") {
-    throw new Error("Failed to determine local asset server port");
-  }
-  return {
-    port: address.port,
-    close: () =>
-      new Promise<void>((resolve, reject) => {
-        server.close((err) => (err ? reject(err) : resolve()));
-      }),
-  };
-}
 
 // Renders the final composited reel and returns the encoded MP4 bytes.
 //
