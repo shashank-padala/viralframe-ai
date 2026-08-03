@@ -7,9 +7,13 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* These must reference the CSS variables next/font generates in
+     layout.tsx, not the literal family names. Naming "Inter" and
+     "Instrument Serif" directly does not resolve to the self-hosted faces,
+     so every `font-display` headline was silently falling back to Georgia. */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", monospace;
-  --font-display: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
   --font-heading: var(--font-sans);
   --color-brand: var(--brand);
   --color-brand-2: var(--brand-2);
@@ -173,4 +177,26 @@
 }
 @utility animate-float {
   animation: float-slow 6s ease-in-out infinite;
+}
+/* The corrected word landing in the hero caption card. Slight overshoot in
+   scale plus a short rise reads as the word "snapping" into place, which is
+   what makes the correction feel decisive rather than like a crossfade. */
+@keyframes word-in {
+  0%   { transform: translateY(0.14em) scale(0.9); opacity: 0; filter: blur(3px); }
+  60%  { transform: translateY(0) scale(1.04); opacity: 1; filter: blur(0); }
+  100% { transform: translateY(0) scale(1); opacity: 1; filter: blur(0); }
+}
+@utility animate-word-in {
+  animation: word-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Belt and braces: components already branch on prefers-reduced-motion in
+   JS, but any decorative animation added later should stop here too rather
+   than needing to remember. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-float,
+  .animate-shimmer,
+  .animate-word-in {
+    animation: none !important;
+  }
 }
